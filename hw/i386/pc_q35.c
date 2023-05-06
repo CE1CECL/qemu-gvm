@@ -198,7 +198,7 @@ static void pc_q35_init(MachineState *machine)
 
     if (pcmc->smbios_defaults) {
         /* These values are guest ABI, do not change */
-        smbios_set_defaults("CECL", "M4A88TD-M",
+        smbios_set_defaults("CECL", "CE1",
                             "CECL-PC", pcmc->smbios_legacy_mode,
                             0x00,
                             pcms->smbios_entry_point_type);

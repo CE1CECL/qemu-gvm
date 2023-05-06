@@ -394,10 +394,10 @@ void qemu_edid_generate(uint8_t *edid, size_t size,
     /* =============== set defaults  =============== */
 
     if (!info->vendor || strlen(info->vendor) != 3) {
-        info->vendor = "DEL";
+        info->vendor = "CECL";
     }
     if (!info->name) {
-        info->name = "DEL Monitor";
+        info->name = "CECL Monitor";
     }
     if (!info->prefx) {
         info->prefx = 1280;
@@ -449,7 +449,7 @@ void qemu_edid_generate(uint8_t *edid, size_t size,
     uint16_t vendor_id = ((((info->vendor[0] - '@') & 0x1f) << 10) |
                           (((info->vendor[1] - '@') & 0x1f) <<  5) |
                           (((info->vendor[2] - '@') & 0x1f) <<  0));
-    uint16_t model_nr = 0xA05F;
+    uint16_t model_nr = 0x1960;
     uint32_t serial_nr = info->serial ? atoi(info->serial) : 0;
     stw_be_p(edid +  8, vendor_id);
     stw_le_p(edid + 10, model_nr);

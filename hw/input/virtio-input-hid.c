@@ -16,9 +16,9 @@
 
 #include "standard-headers/linux/input.h"
 
-#define VIRTIO_ID_NAME_KEYBOARD "CECL Keyboard"
-#define VIRTIO_ID_NAME_MOUSE    "CECL Mouse"
-#define VIRTIO_ID_NAME_TABLET   "CECL Tablet"
+#define VIRTIO_ID_NAME_KEYBOARD "CECL Phyzio Keyboard"
+#define VIRTIO_ID_NAME_MOUSE    "CECL Phyzio Mouse"
+#define VIRTIO_ID_NAME_TABLET   "CECL Phyzio Tablet"
 
 /* ----------------------------------------------------------------- */
 

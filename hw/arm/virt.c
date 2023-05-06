@@ -1609,10 +1609,10 @@ static void virt_build_smbios(VirtMachineState *vms)
     VirtMachineClass *vmc = VIRT_MACHINE_GET_CLASS(vms);
     uint8_t *smbios_tables, *smbios_anchor;
     size_t smbios_tables_len, smbios_anchor_len;
-    const char *product = "CECL Real Machine";
+    const char *product = "CECL Phyzical Machine";
 
     if (kvm_enabled()) {
-        product = "CECL Real Machine";
+        product = "CECL Phyzical Machine";
     }
 
     smbios_set_defaults("CECL", product,
