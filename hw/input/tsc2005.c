@@ -510,7 +510,7 @@ void *tsc2005_init(qemu_irq pintdav)
     tsc2005_reset(s);
 
     qemu_add_mouse_event_handler(tsc2005_touchscreen_event, s, 1,
-                    "QEMU TSC2005-driven Touchscreen");
+                    "CECL TSC2005-driven Touchscreen");
 
     qemu_register_reset((void *) tsc2005_reset, s);
     vmstate_register(NULL, 0, &vmstate_tsc2005, s);

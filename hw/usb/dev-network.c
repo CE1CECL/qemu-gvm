@@ -97,16 +97,16 @@ enum usbstring_idx {
 #define ETH_FRAME_LEN			1514 /* Max. octets in frame sans FCS */
 
 static const USBDescStrings usb_net_stringtable = {
-    [STRING_MANUFACTURER]       = "QEMU",
-    [STRING_PRODUCT]            = "RNDIS/QEMU USB Network Device",
-    [STRING_ETHADDR]            = "400102030405",
-    [STRING_DATA]               = "QEMU USB Net Data Interface",
-    [STRING_CONTROL]            = "QEMU USB Net Control Interface",
-    [STRING_RNDIS_CONTROL]      = "QEMU USB Net RNDIS Control Interface",
-    [STRING_CDC]                = "QEMU USB Net CDC",
-    [STRING_SUBSET]             = "QEMU USB Net Subset",
-    [STRING_RNDIS]              = "QEMU USB Net RNDIS",
-    [STRING_SERIALNUMBER]       = "1",
+    [STRING_MANUFACTURER]       = "CECL",
+    [STRING_PRODUCT]            = "RNDIS/CECL USB Network Device",
+    [STRING_ETHADDR]            = "400114514405",
+    [STRING_DATA]               = "CECL USB Net Data Interface",
+    [STRING_CONTROL]            = "CECL USB Net Control Interface",
+    [STRING_RNDIS_CONTROL]      = "CECL USB Net RNDIS Control Interface",
+    [STRING_CDC]                = "CECL USB Net CDC",
+    [STRING_SUBSET]             = "CECL USB Net Subset",
+    [STRING_RNDIS]              = "CECL USB Net RNDIS",
+    [STRING_SERIALNUMBER]       = "48878997",
 };
 
 static const USBDescIface desc_iface_rndis[] = {
@@ -720,7 +720,7 @@ static int ndis_query(USBNetState *s, uint32_t oid,
 
     /* mandatory */
     case OID_GEN_VENDOR_DESCRIPTION:
-        pstrcpy((char *)outbuf, outlen, "QEMU USB RNDIS Net");
+        pstrcpy((char *)outbuf, outlen, "CECL USB RNDIS Net");
         return strlen((char *)outbuf) + 1;
 
     case OID_GEN_VENDOR_DRIVER_VERSION:
@@ -1401,7 +1401,7 @@ static void usb_net_class_initfn(ObjectClass *klass, void *data)
     USBDeviceClass *uc = USB_DEVICE_CLASS(klass);
 
     uc->realize        = usb_net_realize;
-    uc->product_desc   = "QEMU USB Network Interface";
+    uc->product_desc   = "CECL USB Network Interface";
     uc->usb_desc       = &desc_net;
     uc->handle_reset   = usb_net_handle_reset;
     uc->handle_control = usb_net_handle_control;

@@ -1724,11 +1724,11 @@ void acpi_table_begin(AcpiTable *desc, GArray *array)
     build_append_int_noprefix(array, 0, 4); /* Length */
     build_append_int_noprefix(array, desc->rev, 1); /* Revision */
     build_append_int_noprefix(array, 0, 1); /* Checksum */
-    build_append_padded_str(array, desc->oem_id, 6, '\0'); /* OEMID */
+    build_append_padded_str(array, ACPI_BUILD_APPNAME6, 6, '\0'); /* OEMID */ //desc->oem_id
     /* OEM Table ID */
-    build_append_padded_str(array, desc->oem_table_id, 8, '\0');
+    build_append_padded_str(array, ACPI_BUILD_APPNAME8, 8, '\0'); //desc->oem_table_id
     build_append_int_noprefix(array, 1, 4); /* OEM Revision */
-    g_array_append_vals(array, ACPI_BUILD_APPNAME8, 4); /* Creator ID */
+    g_array_append_vals(array, "PTL ", 4); /* Creator ID */
     build_append_int_noprefix(array, 1, 4); /* Creator Revision */
 }
 

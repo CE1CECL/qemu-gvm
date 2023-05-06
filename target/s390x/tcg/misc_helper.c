@@ -329,18 +329,18 @@ uint32_t HELPER(stsi)(CPUS390XState *env, uint64_t a0, uint64_t r0, uint64_t r1)
             /* Basic Machine Configuration */
             char type[5] = {};
 
-            ebcdic_put(sysib.sysib_111.manuf, "QEMU            ", 16);
+            ebcdic_put(sysib.sysib_111.manuf, "CECL            ", 16);
             /* same as machine type number in STORE CPU ID, but in EBCDIC */
             snprintf(type, ARRAY_SIZE(type), "%X", cpu->model->def->type);
             ebcdic_put(sysib.sysib_111.type, type, 4);
             /* model number (not stored in STORE CPU ID for z/Architecure) */
-            ebcdic_put(sysib.sysib_111.model, "QEMU            ", 16);
-            ebcdic_put(sysib.sysib_111.sequence, "QEMU            ", 16);
-            ebcdic_put(sysib.sysib_111.plant, "QEMU", 4);
+            ebcdic_put(sysib.sysib_111.model, "CECL            ", 16);
+            ebcdic_put(sysib.sysib_111.sequence, "CECL            ", 16);
+            ebcdic_put(sysib.sysib_111.plant, "CECL", 4);
         } else if ((sel1 == 2) && (sel2 == 1)) {
             /* Basic Machine CPU */
-            ebcdic_put(sysib.sysib_121.sequence, "QEMUQEMUQEMUQEMU", 16);
-            ebcdic_put(sysib.sysib_121.plant, "QEMU", 4);
+            ebcdic_put(sysib.sysib_121.sequence, "CECLCECLCECLCECL", 16);
+            ebcdic_put(sysib.sysib_121.plant, "CECL", 4);
             sysib.sysib_121.cpu_addr = cpu_to_be16(env->core_id);
         } else if ((sel1 == 2) && (sel2 == 2)) {
             /* Basic Machine CPUs */
@@ -355,8 +355,8 @@ uint32_t HELPER(stsi)(CPUS390XState *env, uint64_t a0, uint64_t r0, uint64_t r1)
     case STSI_R0_FC_LEVEL_2:
         if ((sel1 == 2) && (sel2 == 1)) {
             /* LPAR CPU */
-            ebcdic_put(sysib.sysib_221.sequence, "QEMUQEMUQEMUQEMU", 16);
-            ebcdic_put(sysib.sysib_221.plant, "QEMU", 4);
+            ebcdic_put(sysib.sysib_221.sequence, "CECLCECLCECLCECL", 16);
+            ebcdic_put(sysib.sysib_221.plant, "CECL", 4);
             sysib.sysib_221.cpu_addr = cpu_to_be16(env->core_id);
         } else if ((sel1 == 2) && (sel2 == 2)) {
             /* LPAR CPUs */
@@ -364,7 +364,7 @@ uint32_t HELPER(stsi)(CPUS390XState *env, uint64_t a0, uint64_t r0, uint64_t r1)
             sysib.sysib_222.total_cpus = cpu_to_be16(total_cpus);
             sysib.sysib_222.conf_cpus = cpu_to_be16(conf_cpus);
             sysib.sysib_222.reserved_cpus = cpu_to_be16(reserved_cpus);
-            ebcdic_put(sysib.sysib_222.name, "QEMU    ", 8);
+            ebcdic_put(sysib.sysib_222.name, "CECL    ", 8);
             sysib.sysib_222.caf = cpu_to_be32(1000);
             sysib.sysib_222.dedicated_cpus = cpu_to_be16(conf_cpus);
         } else {
@@ -380,7 +380,7 @@ uint32_t HELPER(stsi)(CPUS390XState *env, uint64_t a0, uint64_t r0, uint64_t r1)
             sysib.sysib_322.vm[0].reserved_cpus = cpu_to_be16(reserved_cpus);
             sysib.sysib_322.vm[0].caf = cpu_to_be32(1000);
             /* Linux kernel uses this to distinguish us from z/VM */
-            ebcdic_put(sysib.sysib_322.vm[0].cpi, "KVM/Linux       ", 16);
+            ebcdic_put(sysib.sysib_322.vm[0].cpi, "CECL/Linux       ", 16);
             sysib.sysib_322.vm[0].ext_name_encoding = 2; /* UTF-8 */
 
             /* If our VM has a name, use the real name */
@@ -395,8 +395,8 @@ uint32_t HELPER(stsi)(CPUS390XState *env, uint64_t a0, uint64_t r0, uint64_t r1)
                           qemu_name, '\0');
 
             } else {
-                ebcdic_put(sysib.sysib_322.vm[0].name, "TCGguest", 8);
-                strcpy((char *)sysib.sysib_322.ext_names[0], "TCGguest");
+                ebcdic_put(sysib.sysib_322.vm[0].name, "CECL    ", 8);
+                strcpy((char *)sysib.sysib_322.ext_names[0], "CECL    ");
             }
 
             /* add the uuid */

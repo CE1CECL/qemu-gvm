@@ -851,7 +851,7 @@ static void sbsa_ref_class_init(ObjectClass *oc, void *data)
     MachineClass *mc = MACHINE_CLASS(oc);
 
     mc->init = sbsa_ref_init;
-    mc->desc = "QEMU 'SBSA Reference' ARM Virtual Machine";
+    mc->desc = "CECL 'SBSA Reference' ARM Real Machine";
     mc->default_cpu_type = ARM_CPU_TYPE_NAME("cortex-a57");
     mc->max_cpus = 512;
     mc->pci_allow_0_address = true;

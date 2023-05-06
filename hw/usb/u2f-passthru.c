@@ -531,7 +531,7 @@ static void u2f_passthru_class_init(ObjectClass *klass, void *data)
     kc->realize = u2f_passthru_realize;
     kc->unrealize = u2f_passthru_unrealize;
     kc->recv_from_guest = u2f_passthru_recv_from_guest;
-    dc->desc = "QEMU U2F passthrough key";
+    dc->desc = "CECL U2F passthrough key";
     dc->vmsd = &u2f_passthru_vmstate;
     device_class_set_props(dc, u2f_passthru_properties);
     set_bit(DEVICE_CATEGORY_MISC, dc->categories);

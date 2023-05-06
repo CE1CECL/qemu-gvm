@@ -171,9 +171,9 @@ enum {
 };
 
 static const USBDescStrings desc_strings = {
-    [STR_MANUFACTURER] = "QEMU",
+    [STR_MANUFACTURER] = "CECL",
     [STR_PRODUCT]      = "USB Attached SCSI HBA",
-    [STR_SERIALNUMBER] = "27842",
+    [STR_SERIALNUMBER] = "33121",
     [STR_CONFIG_HIGH]  = "High speed config (usb 2.0)",
     [STR_CONFIG_SUPER] = "Super speed config (usb 3.0)",
 };

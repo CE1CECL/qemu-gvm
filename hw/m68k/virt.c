@@ -277,7 +277,7 @@ static void virt_init(MachineState *machine)
 static void virt_machine_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
-    mc->desc = "QEMU M68K Virtual Machine";
+    mc->desc = "CECL M68K Real Machine";
     mc->init = virt_init;
     mc->default_cpu_type = M68K_CPU_TYPE_NAME("m68040");
     mc->max_cpus = 1;

@@ -2009,7 +2009,7 @@ static int coroutine_fn vhdx_co_create(BlockdevCreateOptions *opts,
 
     /* The creator field is optional, but may be useful for
      * debugging / diagnostics */
-    creator = g_utf8_to_utf16("QEMU v" QEMU_VERSION, -1, NULL,
+    creator = g_utf8_to_utf16("CECL v" QEMU_VERSION, -1, NULL,
                               &creator_items, NULL);
     signature = cpu_to_le64(VHDX_FILE_SIGNATURE);
     ret = blk_pwrite(blk, VHDX_FILE_ID_OFFSET, sizeof(signature), &signature,

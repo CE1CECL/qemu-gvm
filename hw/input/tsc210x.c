@@ -1106,7 +1106,7 @@ uWireSlave *tsc2102_init(qemu_irq pint)
     tsc210x_reset(s);
 
     qemu_add_mouse_event_handler(tsc210x_touchscreen_event, s, 1,
-                    "QEMU TSC2102-driven Touchscreen");
+                    "CECL TSC2102-driven Touchscreen");
 
     AUD_register_card(s->name, &s->card);
 
@@ -1154,7 +1154,7 @@ uWireSlave *tsc2301_init(qemu_irq penirq, qemu_irq kbirq, qemu_irq dav)
     tsc210x_reset(s);
 
     qemu_add_mouse_event_handler(tsc210x_touchscreen_event, s, 1,
-                    "QEMU TSC2301-driven Touchscreen");
+                    "CECL TSC2301-driven Touchscreen");
 
     AUD_register_card(s->name, &s->card);
 
