@@ -52,12 +52,12 @@ extern bool pci_available;
 #define PCI_DEVICE_ID_MARVELL_GT6412X    0x4620
 
 /* QEMU/Bochs VGA (0x1234) */
-#define PCI_VENDOR_ID_QEMU               0x1234
+#define PCI_VENDOR_ID_QEMU               0x1960
 #define PCI_DEVICE_ID_QEMU_VGA           0x1111
 #define PCI_DEVICE_ID_QEMU_IPMI          0x1112
 
 /* VMWare (0x15ad) */
-#define PCI_VENDOR_ID_VMWARE             0x15ad
+#define PCI_VENDOR_ID_VMWARE             0x1960
 #define PCI_DEVICE_ID_VMWARE_SVGA2       0x0405
 #define PCI_DEVICE_ID_VMWARE_SVGA        0x0710
 #define PCI_DEVICE_ID_VMWARE_NET         0x0720
