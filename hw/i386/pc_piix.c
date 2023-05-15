@@ -182,9 +182,9 @@ static void pc_init1(MachineState *machine,
     if (pcmc->smbios_defaults) {
         MachineClass *mc = MACHINE_GET_CLASS(machine);
         /* These values are guest ABI, do not change */
-        smbios_set_defaults("CECL", "CE1",
-                            mc->name, pcmc->smbios_legacy_mode,
-                            pcmc->smbios_uuid_encoded,
+        smbios_set_defaults("CECL", "CECL",
+                            "CECL-PC", pcmc->smbios_legacy_mode,
+                            0x00,
                             pcms->smbios_entry_point_type);
     }
 
