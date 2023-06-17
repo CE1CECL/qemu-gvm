@@ -523,8 +523,10 @@ static void mixer_reset(AC97LinkState *s)
     /*
      * Sigmatel 9700 (STAC9700)
      */
-    mixer_store(s, AC97_Vendor_ID1, 0x8384);
-    mixer_store(s, AC97_Vendor_ID2, 0x7600); /* 7608 */
+    mixer_store(s, AC97_Vendor_ID1, 0x414C);
+//    mixer_store(s, AC97_Vendor_ID1, 0x8384);
+    mixer_store(s, AC97_Vendor_ID2, 0x4790); /* 7608 */
+//    mixer_store(s, AC97_Vendor_ID2, 0x7600); /* 7608 */
 
     mixer_store(s, AC97_Extended_Audio_ID, 0x0809);
     mixer_store(s, AC97_Extended_Audio_Ctrl_Stat, 0x0009);
@@ -1373,8 +1375,8 @@ static void ac97_class_init(ObjectClass *klass, void *data)
 
     k->realize = ac97_realize;
     k->exit = ac97_exit;
-    k->vendor_id = PCI_VENDOR_ID_INTEL;
-    k->device_id = PCI_DEVICE_ID_INTEL_82801AA_5;
+    k->vendor_id = 0x8086; //PCI_VENDOR_ID_INTEL;
+    k->device_id = 0x7195; //PCI_DEVICE_ID_INTEL_82801AA_5;
     k->revision = 0x01;
     k->class_id = PCI_CLASS_MULTIMEDIA_AUDIO;
     set_bit(DEVICE_CATEGORY_SOUND, dc->categories);

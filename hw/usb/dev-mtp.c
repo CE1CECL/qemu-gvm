@@ -362,7 +362,7 @@ static const USBDescMSOS desc_msos = {
 
 static const USBDesc desc = {
     .id = {
-        .idVendor          = 0x46f4, /* CRC16() of "QEMU" */
+        .idVendor          = 0x1960, /* CRC16() of "QEMU" */
         .idProduct         = 0x0004,
         .bcdDevice         = 0,
         .iManufacturer     = STR_MANUFACTURER,

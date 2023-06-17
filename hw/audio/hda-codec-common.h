@@ -24,22 +24,26 @@
  * HDA codec descriptions
  */
 
+#define QEMU_HDA_ID 0x10EC0880
+#define QEMU_HDA_ID_OUTPUT QEMU_HDA_ID
+#define QEMU_HDA_ID_DUPLEX QEMU_HDA_ID
+#define QEMU_HDA_ID_MICRO QEMU_HDA_ID
+
 #ifdef HDA_MIXER
-#define QEMU_HDA_ID_OUTPUT  ((QEMU_HDA_ID_VENDOR << 16) | 0x12)
-#define QEMU_HDA_ID_DUPLEX  ((QEMU_HDA_ID_VENDOR << 16) | 0x22)
-#define QEMU_HDA_ID_MICRO   ((QEMU_HDA_ID_VENDOR << 16) | 0x32)
+//#define QEMU_HDA_ID_OUTPUT  ((QEMU_HDA_ID_VENDOR << 16) | 0x12)
+//#define QEMU_HDA_ID_DUPLEX  ((QEMU_HDA_ID_VENDOR << 16) | 0x22)
+//#define QEMU_HDA_ID_MICRO   ((QEMU_HDA_ID_VENDOR << 16) | 0x32)
 #define QEMU_HDA_AMP_CAPS                                               \
     (AC_AMPCAP_MUTE |                                                   \
      (QEMU_HDA_AMP_STEPS << AC_AMPCAP_OFFSET_SHIFT)    |                \
      (QEMU_HDA_AMP_STEPS << AC_AMPCAP_NUM_STEPS_SHIFT) |                \
      (3                  << AC_AMPCAP_STEP_SIZE_SHIFT))
 #else
-#define QEMU_HDA_ID_OUTPUT  ((QEMU_HDA_ID_VENDOR << 16) | 0x11)
-#define QEMU_HDA_ID_DUPLEX  ((QEMU_HDA_ID_VENDOR << 16) | 0x21)
-#define QEMU_HDA_ID_MICRO   ((QEMU_HDA_ID_VENDOR << 16) | 0x31)
+//#define QEMU_HDA_ID_OUTPUT  ((QEMU_HDA_ID_VENDOR << 16) | 0x11)
+//#define QEMU_HDA_ID_DUPLEX  ((QEMU_HDA_ID_VENDOR << 16) | 0x21)
+//#define QEMU_HDA_ID_MICRO   ((QEMU_HDA_ID_VENDOR << 16) | 0x31)
 #define QEMU_HDA_AMP_CAPS   QEMU_HDA_AMP_NONE
 #endif
-
 
 /* common: audio output widget */
 static const desc_param glue(common_params_audio_dac_, PARAM)[] = {
@@ -208,9 +212,9 @@ static const desc_node glue(output_nodes_, PARAM)[] = {
         .name    = "out",
         .params  = glue(common_params_audio_lineout_, PARAM),
         .nparams = ARRAY_SIZE(glue(common_params_audio_lineout_, PARAM)),
-        .config  = ((AC_JACK_PORT_COMPLEX << AC_DEFCFG_PORT_CONN_SHIFT) |
-                    (AC_JACK_LINE_OUT     << AC_DEFCFG_DEVICE_SHIFT)    |
-                    (AC_JACK_CONN_UNKNOWN << AC_DEFCFG_CONN_TYPE_SHIFT) |
+        .config  = ((AC_JACK_PORT_FIXED << AC_DEFCFG_PORT_CONN_SHIFT) |
+                    (AC_JACK_SPEAKER     << AC_DEFCFG_DEVICE_SHIFT)    |
+                    (AC_JACK_CONN_1_8 << AC_DEFCFG_CONN_TYPE_SHIFT) |
                     (AC_JACK_COLOR_GREEN  << AC_DEFCFG_COLOR_SHIFT)     |
                     0x10),
         .pinctl  = AC_PINCTL_OUT_EN,
@@ -301,9 +305,9 @@ static const desc_node glue(duplex_nodes_, PARAM)[] = {
         .name    = "out",
         .params  = glue(common_params_audio_lineout_, PARAM),
         .nparams = ARRAY_SIZE(glue(common_params_audio_lineout_, PARAM)),
-        .config  = ((AC_JACK_PORT_COMPLEX << AC_DEFCFG_PORT_CONN_SHIFT) |
-                    (AC_JACK_LINE_OUT     << AC_DEFCFG_DEVICE_SHIFT)    |
-                    (AC_JACK_CONN_UNKNOWN << AC_DEFCFG_CONN_TYPE_SHIFT) |
+        .config  = ((AC_JACK_PORT_FIXED << AC_DEFCFG_PORT_CONN_SHIFT) |
+                    (AC_JACK_SPEAKER     << AC_DEFCFG_DEVICE_SHIFT)    |
+                    (AC_JACK_CONN_1_8 << AC_DEFCFG_CONN_TYPE_SHIFT) |
                     (AC_JACK_COLOR_GREEN  << AC_DEFCFG_COLOR_SHIFT)     |
                     0x10),
         .pinctl  = AC_PINCTL_OUT_EN,
@@ -320,10 +324,10 @@ static const desc_node glue(duplex_nodes_, PARAM)[] = {
         .name    = "in",
         .params  = glue(common_params_audio_linein_, PARAM),
         .nparams = ARRAY_SIZE(glue(common_params_audio_linein_, PARAM)),
-        .config  = ((AC_JACK_PORT_COMPLEX << AC_DEFCFG_PORT_CONN_SHIFT) |
-                    (AC_JACK_LINE_IN      << AC_DEFCFG_DEVICE_SHIFT)    |
-                    (AC_JACK_CONN_UNKNOWN << AC_DEFCFG_CONN_TYPE_SHIFT) |
-                    (AC_JACK_COLOR_RED    << AC_DEFCFG_COLOR_SHIFT)     |
+        .config  = ((AC_JACK_PORT_FIXED << AC_DEFCFG_PORT_CONN_SHIFT) |
+                    (AC_JACK_MIC_IN      << AC_DEFCFG_DEVICE_SHIFT)    |
+                    (AC_JACK_CONN_1_8 << AC_DEFCFG_CONN_TYPE_SHIFT) |
+                    (AC_JACK_COLOR_PINK    << AC_DEFCFG_COLOR_SHIFT)     |
                     0x20),
         .pinctl  = AC_PINCTL_IN_EN,
     }
@@ -412,9 +416,9 @@ static const desc_node glue(micro_nodes_, PARAM)[] = {
         .name    = "out",
         .params  = glue(common_params_audio_lineout_, PARAM),
         .nparams = ARRAY_SIZE(glue(common_params_audio_lineout_, PARAM)),
-        .config  = ((AC_JACK_PORT_COMPLEX << AC_DEFCFG_PORT_CONN_SHIFT) |
+        .config  = ((AC_JACK_PORT_FIXED << AC_DEFCFG_PORT_CONN_SHIFT) |
                     (AC_JACK_SPEAKER      << AC_DEFCFG_DEVICE_SHIFT)    |
-                    (AC_JACK_CONN_UNKNOWN << AC_DEFCFG_CONN_TYPE_SHIFT) |
+                    (AC_JACK_CONN_1_8 << AC_DEFCFG_CONN_TYPE_SHIFT) |
                     (AC_JACK_COLOR_GREEN  << AC_DEFCFG_COLOR_SHIFT)     |
                     0x10),
         .pinctl  = AC_PINCTL_OUT_EN,
@@ -431,10 +435,10 @@ static const desc_node glue(micro_nodes_, PARAM)[] = {
         .name    = "in",
         .params  = glue(common_params_audio_linein_, PARAM),
         .nparams = ARRAY_SIZE(glue(common_params_audio_linein_, PARAM)),
-        .config  = ((AC_JACK_PORT_COMPLEX << AC_DEFCFG_PORT_CONN_SHIFT) |
+        .config  = ((AC_JACK_PORT_FIXED << AC_DEFCFG_PORT_CONN_SHIFT) |
                     (AC_JACK_MIC_IN       << AC_DEFCFG_DEVICE_SHIFT)    |
-                    (AC_JACK_CONN_UNKNOWN << AC_DEFCFG_CONN_TYPE_SHIFT) |
-                    (AC_JACK_COLOR_RED    << AC_DEFCFG_COLOR_SHIFT)     |
+                    (AC_JACK_CONN_1_8 << AC_DEFCFG_CONN_TYPE_SHIFT) |
+                    (AC_JACK_COLOR_PINK    << AC_DEFCFG_COLOR_SHIFT)     |
                     0x20),
         .pinctl  = AC_PINCTL_IN_EN,
     }

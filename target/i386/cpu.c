@@ -5673,7 +5673,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
          * set here, but we restrict to TCG none the less.
          */
         if (tcg_enabled() && cpu->expose_tcg) {
-            memcpy(signature, "TCGTCGTCGTCG", 12);
+            memcpy(signature, "GenuineIntel", 12);
             *eax = 0x40000001;
             *ebx = signature[0];
             *ecx = signature[1];

@@ -40,7 +40,7 @@
 
 static void usb_audio_reinit(USBDevice *dev, unsigned channels);
 
-#define USBAUDIO_VENDOR_NUM     0x46f4 /* CRC16() of "QEMU" */
+#define USBAUDIO_VENDOR_NUM     0x1960 /* CRC16() of "QEMU" */
 #define USBAUDIO_PRODUCT_NUM    0x0002
 
 #define DEV_CONFIG_VALUE        1 /* The one and only */

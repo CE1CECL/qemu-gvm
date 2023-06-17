@@ -34,7 +34,7 @@
 #include "u2f.h"
 
 /* U2F key Vendor / Product */
-#define U2F_KEY_VENDOR_NUM     0x46f4 /* CRC16() of "QEMU" */
+#define U2F_KEY_VENDOR_NUM     0x1960 /* CRC16() of "QEMU" */
 #define U2F_KEY_PRODUCT_NUM    0x0005
 
 enum {
