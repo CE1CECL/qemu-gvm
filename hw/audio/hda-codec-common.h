@@ -24,7 +24,7 @@
  * HDA codec descriptions
  */
 
-#define QEMU_HDA_ID 0x10EC0880
+#define QEMU_HDA_ID 0x10EC0900
 #define QEMU_HDA_ID_OUTPUT QEMU_HDA_ID
 #define QEMU_HDA_ID_DUPLEX QEMU_HDA_ID
 #define QEMU_HDA_ID_MICRO QEMU_HDA_ID
