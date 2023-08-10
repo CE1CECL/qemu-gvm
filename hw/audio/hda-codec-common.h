@@ -24,9 +24,12 @@
  * HDA codec descriptions
  */
 
-#define QEMU_HDA_ID_DUPLEX 0x10EC0900
-#define QEMU_HDA_ID_OUTPUT 0x10EC0885
-#define QEMU_HDA_ID_MICRO 0x10EC0880
+#define QEMU_HDA_ID 0x10EC0885
+#define QEMU_HDA_ID_SS QEMU_HDA_ID
+#define QEMU_HDA_ID_REV QEMU_HDA_ID
+#define QEMU_HDA_ID_DUPLEX QEMU_HDA_ID
+#define QEMU_HDA_ID_OUTPUT QEMU_HDA_ID
+#define QEMU_HDA_ID_MICRO QEMU_HDA_ID
 
 #ifdef HDA_MIXER
 //#define QEMU_HDA_ID_OUTPUT  ((QEMU_HDA_ID_VENDOR << 16) | 0x12)
@@ -143,10 +146,10 @@ static const desc_param glue(output_params_root_, PARAM)[] = {
         .val = QEMU_HDA_ID_OUTPUT,
     },{
         .id  = AC_PAR_SUBSYSTEM_ID,
-        .val = QEMU_HDA_ID_OUTPUT,
+        .val = QEMU_HDA_ID_SS,
     },{
         .id  = AC_PAR_REV_ID,
-        .val = 0x00100101,
+        .val = QEMU_HDA_ID_REV,
     },{
         .id  = AC_PAR_NODE_COUNT,
         .val = 0x00010001,
@@ -160,7 +163,7 @@ static const desc_param glue(output_params_audio_func_, PARAM)[] = {
         .val = AC_GRP_AUDIO_FUNCTION,
     },{
         .id  = AC_PAR_SUBSYSTEM_ID,
-        .val = QEMU_HDA_ID_OUTPUT,
+        .val = QEMU_HDA_ID_SS,
     },{
         .id  = AC_PAR_NODE_COUNT,
         .val = 0x00020002,
@@ -236,10 +239,10 @@ static const desc_param glue(duplex_params_root_, PARAM)[] = {
         .val = QEMU_HDA_ID_DUPLEX,
     },{
         .id  = AC_PAR_SUBSYSTEM_ID,
-        .val = QEMU_HDA_ID_DUPLEX,
+        .val = QEMU_HDA_ID_SS,
     },{
         .id  = AC_PAR_REV_ID,
-        .val = 0x00100101,
+        .val = QEMU_HDA_ID_REV,
     },{
         .id  = AC_PAR_NODE_COUNT,
         .val = 0x00010001,
@@ -253,7 +256,7 @@ static const desc_param glue(duplex_params_audio_func_, PARAM)[] = {
         .val = AC_GRP_AUDIO_FUNCTION,
     },{
         .id  = AC_PAR_SUBSYSTEM_ID,
-        .val = QEMU_HDA_ID_DUPLEX,
+        .val = QEMU_HDA_ID_SS,
     },{
         .id  = AC_PAR_NODE_COUNT,
         .val = 0x00020004,
@@ -347,10 +350,10 @@ static const desc_param glue(micro_params_root_, PARAM)[] = {
         .val = QEMU_HDA_ID_MICRO,
     },{
         .id  = AC_PAR_SUBSYSTEM_ID,
-        .val = QEMU_HDA_ID_MICRO,
+        .val = QEMU_HDA_ID_SS,
     },{
         .id  = AC_PAR_REV_ID,
-        .val = 0x00100101,
+        .val = QEMU_HDA_ID_REV,
     },{
         .id  = AC_PAR_NODE_COUNT,
         .val = 0x00010001,
@@ -364,7 +367,7 @@ static const desc_param glue(micro_params_audio_func_, PARAM)[] = {
         .val = AC_GRP_AUDIO_FUNCTION,
     },{
         .id  = AC_PAR_SUBSYSTEM_ID,
-        .val = QEMU_HDA_ID_MICRO,
+        .val = QEMU_HDA_ID_SS,
     },{
         .id  = AC_PAR_NODE_COUNT,
         .val = 0x00020004,
