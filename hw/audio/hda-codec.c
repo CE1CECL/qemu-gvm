@@ -514,25 +514,13 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     }
 
     node = hda_codec_find_node(a->desc, nid);
+    if (node == NULL) {
+        goto liaf;
+    }
     dprint(a, 2, "%s: nid %d (%s), verb 0x%x, payload 0x%x\n",
            __func__, nid, node->name, verb, payload);
 
     switch (verb) {
-    case AC_VERB_GET_PROC_COEF:
-    case AC_VERB_GET_COEF_INDEX:
-        hda_codec_response(hda, true, 0x0885);
-        break;
-
-    case AC_VERB_SET_PROC_COEF:
-    case AC_VERB_SET_COEF_INDEX:
-        hda_codec_response(hda, true, 0);
-        break;
-
-    if (node == NULL) {
-        goto fail;
-        break;
-    }
-
     /* all nodes */
     case AC_VERB_PARAMETERS:
         param = hda_codec_find_param(node, payload);
@@ -665,6 +653,11 @@ fail:
     dprint(a, 1, "%s: not handled: nid %d (%s), verb 0x%x, payload 0x%x\n",
            __func__, nid, node ? node->name : "?", verb, payload);
     hda_codec_response(hda, true, 0);
+
+liaf:
+    dprint(a, 1, "%s: not handled: nid %d (%s), verb 0x%x, payload 0x%x\n",
+           __func__, nid, node ? node->name : "?", verb, payload);
+    hda_codec_response(hda, true, 0x0885);
 }
 
 static void hda_audio_stream(HDACodecDevice *hda, uint32_t stnr, bool running, bool output)
