@@ -1235,8 +1235,12 @@ static void intel_hda_class_init(ObjectClass *klass, void *data)
 
     k->realize = intel_hda_realize;
     k->exit = intel_hda_exit;
-    k->vendor_id = PCI_VENDOR_ID_INTEL;
-    k->class_id = PCI_CLASS_MULTIMEDIA_HD_AUDIO;
+    k->vendor_id = 0x8086; //PCI_VENDOR_ID_INTEL;
+    k->class_id = 0x0403; //PCI_CLASS_MULTIMEDIA_HD_AUDIO;
+    k->device_id = 0x27d8;
+    k->revision = 0x02;
+    k->subsystem_vendor_id = 0x10ec;
+    k->subsystem_id = 0x0885;
     dc->reset = intel_hda_reset;
     dc->vmsd = &vmstate_intel_hda;
     device_class_set_props(dc, intel_hda_properties);
@@ -1245,10 +1249,10 @@ static void intel_hda_class_init(ObjectClass *klass, void *data)
 static void intel_hda_class_init_ich6(ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
-    PCIDeviceClass *k = PCI_DEVICE_CLASS(klass);
+//    PCIDeviceClass *k = PCI_DEVICE_CLASS(klass);
 
-    k->device_id = 0x2668;
-    k->revision = 1;
+//    k->device_id = 0x2668;
+//    k->revision = 1;
     set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
     dc->desc = "Intel HD Audio Controller (ich6)";
 }
@@ -1256,10 +1260,10 @@ static void intel_hda_class_init_ich6(ObjectClass *klass, void *data)
 static void intel_hda_class_init_ich9(ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
-    PCIDeviceClass *k = PCI_DEVICE_CLASS(klass);
+//    PCIDeviceClass *k = PCI_DEVICE_CLASS(klass);
 
-    k->device_id = 0x293e;
-    k->revision = 3;
+//    k->device_id = 0x293e;
+//    k->revision = 3;
     set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
     dc->desc = "Intel HD Audio Controller (ich9)";
 }
