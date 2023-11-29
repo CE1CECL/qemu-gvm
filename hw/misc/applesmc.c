@@ -84,8 +84,7 @@ enum {
 #define smc_debug(...) do { } while (0)
 #endif
 
-static char default_osk[64] = "This is a dummy key. Enter the real key "
-                              "using the -osk parameter";
+static char default_osk[64] = "CECLCECLCECLCECLCECLCECLCECLCECLCECLCECLCECLCECLCECLCECLCECLCECL";
 
 struct AppleSMCData {
     uint8_t len;

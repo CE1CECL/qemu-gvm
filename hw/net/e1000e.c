@@ -691,6 +691,7 @@ static void e1000e_class_init(ObjectClass *class, void *data)
     dc->desc = "Intel 82574L GbE Controller";
     dc->reset = e1000e_qdev_reset;
     dc->vmsd = &e1000e_vmstate;
+    dc->hotpluggable = false;
 
     e1000e_prop_disable_vnet = qdev_prop_uint8;
     e1000e_prop_disable_vnet.description = "Do not use virtio headers, "
