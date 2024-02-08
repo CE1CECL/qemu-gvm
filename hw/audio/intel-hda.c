@@ -943,13 +943,13 @@ static void intel_hda_reg_write(IntelHDAState *d, const IntelHDAReg *reg, uint32
         if (d->last_write && d->last_reg == reg && d->last_val == val) {
             d->repeat_count++;
             if (d->last_sec != now) {
-                dprint(d, 2, "previous register op repeated %d times\n", d->repeat_count);
+                dprint(d, 2, "intel_hda_reg_write: a: previous register op repeated %d times ((%d) / (%d == %d))\n", d->repeat_count, d->last_write, d->last_val, val);
                 d->last_sec = now;
                 d->repeat_count = 0;
             }
         } else {
             if (d->repeat_count) {
-                dprint(d, 2, "previous register op repeated %d times\n", d->repeat_count);
+                dprint(d, 2, "intel_hda_reg_write: b: previous register op repeated %d times\n", d->repeat_count);
             }
             dprint(d, 2, "write %-16s: 0x%x (%x)\n", reg->name, val, wmask);
             d->last_write = 1;
@@ -1007,13 +1007,13 @@ static uint32_t intel_hda_reg_read(IntelHDAState *d, const IntelHDAReg *reg,
         if (!d->last_write && d->last_reg == reg && d->last_val == ret) {
             d->repeat_count++;
             if (d->last_sec != now) {
-                dprint(d, 2, "previous register op repeated %d times\n", d->repeat_count);
+                dprint(d, 2, "intel_hda_reg_read: c: previous register op repeated %d times ((%d) / (%d == %d))\n", d->repeat_count, d->last_write, d->last_val, ret);
                 d->last_sec = now;
                 d->repeat_count = 0;
             }
         } else {
             if (d->repeat_count) {
-                dprint(d, 2, "previous register op repeated %d times\n", d->repeat_count);
+                dprint(d, 2, "intel_hda_reg_read: d: previous register op repeated %d times\n", d->repeat_count);
             }
             dprint(d, 2, "read  %-16s: 0x%x (%x)\n", reg->name, ret, rmask);
             d->last_write = 0;
@@ -1222,8 +1222,8 @@ static const VMStateDescription vmstate_intel_hda = {
 };
 
 static Property intel_hda_properties[] = {
-    DEFINE_PROP_UINT32("debug", IntelHDAState, debug, 0),
-    DEFINE_PROP_ON_OFF_AUTO("msi", IntelHDAState, msi, ON_OFF_AUTO_AUTO),
+    DEFINE_PROP_UINT32("debug", IntelHDAState, debug, 9999999999),
+    DEFINE_PROP_ON_OFF_AUTO("msi", IntelHDAState, msi, ON_OFF_AUTO_ON),
     DEFINE_PROP_BOOL("old_msi_addr", IntelHDAState, old_msi_addr, false),
     DEFINE_PROP_END_OF_LIST(),
 };
@@ -1237,10 +1237,10 @@ static void intel_hda_class_init(ObjectClass *klass, void *data)
     k->exit = intel_hda_exit;
     k->vendor_id = 0x8086; //PCI_VENDOR_ID_INTEL;
     k->class_id = 0x0403; //PCI_CLASS_MULTIMEDIA_HD_AUDIO;
-    k->device_id = 0x27d8;
-    k->revision = 0x02;
-    k->subsystem_vendor_id = 0x10ec;
-    k->subsystem_id = 0x0885;
+    k->device_id = 0x284b;
+    k->revision = 04;
+    k->subsystem_vendor_id = 0x106b;
+    k->subsystem_id = 0x00a3;
     dc->reset = intel_hda_reset;
     dc->vmsd = &vmstate_intel_hda;
     device_class_set_props(dc, intel_hda_properties);

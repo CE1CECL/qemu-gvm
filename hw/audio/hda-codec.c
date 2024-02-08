@@ -48,7 +48,6 @@ typedef struct desc_node {
 
 typedef struct desc_codec {
     const char *name;
-    uint32_t iid;
     const desc_node *nodes;
     uint32_t nnodes;
 } desc_codec;
@@ -79,11 +78,7 @@ static const desc_node* hda_codec_find_node(const desc_codec *codec, uint32_t ni
 
 static void hda_codec_parse_fmt(uint32_t format, struct audsettings *as)
 {
-    if (format & AC_FMT_TYPE_NON_PCM) {
-        return;
-    }
-
-    as->freq = (format & AC_FMT_BASE_44K) ? 44100 : 48000;
+    as->freq = (format & AC_FMT_BASE_48K) ? 44100 : 48000;
 
     switch ((format & AC_FMT_MULT_MASK) >> AC_FMT_MULT_SHIFT) {
     case 1: as->freq *= 2; break;
@@ -117,9 +112,7 @@ static void hda_codec_parse_fmt(uint32_t format, struct audsettings *as)
 
 /* some defines */
 
-//#define QEMU_HDA_ID_VENDOR  0x1960
-#define QEMU_HDA_PCM_FORMATS (AC_SUPPCM_BITS_16 |       \
-                              0x1fc /* 16 -> 96 kHz */)
+#define QEMU_HDA_PCM_FORMATS (AC_SUPPCM_BITS_16 | 0x1fc)
 #define QEMU_HDA_AMP_NONE    (0)
 #define QEMU_HDA_AMP_STEPS   0x4a
 
@@ -151,7 +144,7 @@ typedef struct HDAAudioStream HDAAudioStream;
 struct HDAAudioStream {
     HDAAudioState *state;
     const desc_node *node;
-    bool output, running;
+    bool output, input, running;
     uint32_t stream;
     uint32_t channel;
     uint32_t format;
@@ -429,7 +422,7 @@ static void hda_audio_set_running(HDAAudioStream *st, bool running)
     }
     if (st->output) {
         AUD_set_active_out(st->voice.out, st->running);
-    } else {
+    } else if (st->input) {
         AUD_set_active_in(st->voice.in, st->running);
     }
 }
@@ -455,7 +448,7 @@ static void hda_audio_set_amp(HDAAudioStream *st)
     }
     if (st->output) {
         AUD_set_volume_out(st->voice.out, muted, left, right);
-    } else {
+    } else if (st->input) {
         AUD_set_volume_in(st->voice.in, muted, left, right);
     }
 }
@@ -482,7 +475,7 @@ static void hda_audio_setup(HDAAudioStream *st)
         }
         st->voice.out = AUD_open_out(&st->state->card, st->voice.out,
                                      st->node->name, st, cb, &st->as);
-    } else {
+    } else if (st->input) {
         if (use_timer) {
             cb = hda_audio_input_cb;
             st->buft = timer_new_ns(QEMU_CLOCK_VIRTUAL,
@@ -515,7 +508,7 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
 
     node = hda_codec_find_node(a->desc, nid);
     if (node == NULL) {
-        goto liaf;
+	goto fail;
     }
     dprint(a, 2, "%s: nid %d (%s), verb 0x%x, payload 0x%x\n",
            __func__, nid, node->name, verb, payload);
@@ -530,7 +523,7 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         hda_codec_response(hda, true, param->val);
         break;
     case AC_VERB_GET_SUBSYSTEM_ID:
-        hda_codec_response(hda, true, a->desc->iid);
+        hda_codec_response(hda, true, 0x106b3800);
         break;
 
     /* all functions */
@@ -556,7 +549,7 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         break;
     case AC_VERB_SET_PIN_WIDGET_CONTROL:
         if (node->pinctl != payload) {
-            dprint(a, 1, "unhandled pin control bit\n");
+            dprint(a, 1, "unhandled pin control bit (%u != %u)\n", node->pinctl, payload);
         }
         hda_codec_response(hda, true, 0);
         break;
@@ -638,14 +631,11 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         hda_codec_response(hda, true, 0);
         break;
 
-    /* not supported */
-    case AC_VERB_SET_POWER_STATE:
-    case AC_VERB_GET_POWER_STATE:
-    case AC_VERB_GET_SDI_SELECT:
+    default:
+        dprint(a, 1, "%s: not handled: nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, nid, node ? node->name : "?", verb, payload);
         hda_codec_response(hda, true, 0);
         break;
-    default:
-        goto fail;
+//        goto fail;
     }
     return;
 
@@ -654,10 +644,6 @@ fail:
            __func__, nid, node ? node->name : "?", verb, payload);
     hda_codec_response(hda, true, 0);
 
-liaf:
-    dprint(a, 1, "%s: not handled: nid %d (%s), verb 0x%x, payload 0x%x\n",
-           __func__, nid, node ? node->name : "?", verb, payload);
-    hda_codec_response(hda, true, 0x0885);
 }
 
 static void hda_audio_stream(HDACodecDevice *hda, uint32_t stnr, bool running, bool output)
@@ -714,11 +700,15 @@ static int hda_audio_init(HDACodecDevice *hda, const struct desc_codec *desc)
                 st->gain_right = QEMU_HDA_AMP_STEPS;
                 st->compat_bpos = sizeof(st->compat_buf);
                 st->output = true;
+                st->input = false;
+            } else if (type == AC_WID_AUD_IN) {
+                st->input = true;
+                st->output = false;
             } else {
                 st->output = false;
+                st->input = false;
             }
-            st->format = AC_FMT_TYPE_PCM | AC_FMT_BITS_16 |
-                (1 << AC_FMT_CHAN_SHIFT);
+            st->format = 0xe0560;
             hda_codec_parse_fmt(st->format, &st->as);
             hda_audio_setup(st);
             break;
@@ -744,7 +734,7 @@ static void hda_audio_exit(HDACodecDevice *hda)
         }
         if (st->output) {
             AUD_close_out(&a->card, st->voice.out);
-        } else {
+        } else if (st->input) {
             AUD_close_in(&a->card, st->voice.in);
         }
     }
@@ -848,7 +838,7 @@ static const VMStateDescription vmstate_hda_audio = {
 
 static Property hda_audio_properties[] = {
     DEFINE_AUDIO_PROPERTIES(HDAAudioState, card),
-    DEFINE_PROP_UINT32("debug", HDAAudioState, debug,   0),
+    DEFINE_PROP_UINT32("debug", HDAAudioState, debug,   9999999999),
     DEFINE_PROP_BOOL("mixer", HDAAudioState, mixer,  true),
     DEFINE_PROP_BOOL("use-timer", HDAAudioState, use_timer,  true),
     DEFINE_PROP_END_OF_LIST(),
