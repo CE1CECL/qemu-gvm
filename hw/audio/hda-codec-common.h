@@ -45,7 +45,7 @@ static const desc_param glue(paramaters_one_, PARAM)[] = {
         .val = 0xf,
     },{
         .id  = 0x8,
-        .val = 0x3bff,
+        .val = 0x10f0f,
     },
 };
 
@@ -348,6 +348,9 @@ static const desc_param glue(paramaters_twenty_one_, PARAM)[] = {
     },{
         .id  = 0x9,
         .val = 0x600080,
+    },{
+        .id  = 0x13,
+        .val = 0x20,
     },
 };
 
