@@ -631,6 +631,10 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         hda_codec_response(hda, true, 0);
         break;
 
+    case AC_VERB_GET_VOLUME_KNOB_CONTROL:
+        hda_codec_response(hda, true, 63);
+        break;
+
     default:
         dprint(a, 1, "%s: not handled: nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, nid, node ? node->name : "?", verb, payload);
         hda_codec_response(hda, true, 0);
