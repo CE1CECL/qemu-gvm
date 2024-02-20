@@ -19,235 +19,235 @@
 
 static const desc_param glue(paramaters_zero_, PARAM)[] = {
     {
-        .id  = 0x0,
+        .id  = 0x00,
         .val = 0x10ec0885,
     },{
-        .id  = 0x1,
+        .id  = 0x01,
         .val = 0x106b3800,
     },{
-        .id  = 0x2,
+        .id  = 0x02,
         .val = 0x100103,
     },{
-        .id  = 0x4,
-        .val = 0x10001,
+        .id  = 0x04,
+        .val = 0x010001,
     },
 };
 
 static const desc_param glue(paramaters_one_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x1,
+        .id  = 0x05,
+        .val = 0x01,
     },{
-        .id  = 0x4,
-        .val = 0x20025,
+        .id  = 0x04,
+        .val = 0x020025,
     },{
-        .id  = 0xf,
-        .val = 0xf,
+        .id  = 0x0f,
+        .val = 0x0f,
     },{
-        .id  = 0x8,
-        .val = 0x10f0f,
+        .id  = 0x08,
+        .val = 0x010f0f,
     },
 };
 
 static const desc_param glue(paramaters_two_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x11,
     },{
-        .id  = 0xb,
-        .val = 0x1,
+        .id  = 0x0b,
+        .val = 0x01,
     },{
-        .id  = 0xa,
-        .val = 0xe0560,
+        .id  = 0x0a,
+        .val = 0x0e0560,
     },
 };
 
 static const desc_param glue(paramaters_three_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x11,
     },{
-        .id  = 0xb,
-        .val = 0x1,
+        .id  = 0x0b,
+        .val = 0x01,
     },{
-        .id  = 0xa,
-        .val = 0xe0560,
+        .id  = 0x0a,
+        .val = 0x0e0560,
     },
 };
 
 static const desc_param glue(paramaters_four_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x11,
     },{
-        .id  = 0xb,
-        .val = 0x1,
+        .id  = 0x0b,
+        .val = 0x01,
     },{
-        .id  = 0xa,
-        .val = 0xe0560,
+        .id  = 0x0a,
+        .val = 0x0e0560,
     },
 };
 
 static const desc_param glue(paramaters_five_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x11,
     },{
-        .id  = 0xb,
-        .val = 0x1,
+        .id  = 0x0b,
+        .val = 0x01,
     },{
-        .id  = 0xa,
-        .val = 0xe0560,
+        .id  = 0x0a,
+        .val = 0x0e0560,
     },
 };
 
 static const desc_param glue(paramaters_six_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
-        .val = 0x211,
+        .id  = 0x09,
+        .val = 0x0211,
     },{
-        .id  = 0xb,
-        .val = 0x1,
+        .id  = 0x0b,
+        .val = 0x01,
     },{
-        .id  = 0xa,
+        .id  = 0x0a,
         .val = 0x1e05e0,
     },
 };
 
 static const desc_param glue(paramaters_seven_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x10011b,
     },{
-        .id  = 0xe,
-        .val = 0x1,
+        .id  = 0x0e,
+        .val = 0x01,
     },{
-        .id  = 0xd,
+        .id  = 0x0d,
         .val = 0x80032e10,
     },{
-        .id  = 0xb,
-        .val = 0x1,
+        .id  = 0x0b,
+        .val = 0x01,
     },{
-        .id  = 0xa,
-        .val = 0xe0560,
+        .id  = 0x0a,
+        .val = 0x0e0560,
     },
 };
 
 static const desc_param glue(paramaters_eight_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x10011b,
     },{
-        .id  = 0xe,
-        .val = 0x1,
+        .id  = 0x0e,
+        .val = 0x01,
     },{
-        .id  = 0xd,
+        .id  = 0x0d,
         .val = 0x80032e10,
     },{
-        .id  = 0xb,
-        .val = 0x1,
+        .id  = 0x0b,
+        .val = 0x01,
     },{
-        .id  = 0xa,
-        .val = 0xe0560,
+        .id  = 0x0a,
+        .val = 0x0e0560,
     },
 };
 
 static const desc_param glue(paramaters_nine_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x10011b,
     },{
-        .id  = 0xe,
-        .val = 0x1,
+        .id  = 0x0e,
+        .val = 0x01,
     },{
-        .id  = 0xd,
+        .id  = 0x0d,
         .val = 0x80032e10,
     },{
-        .id  = 0xb,
-        .val = 0x1,
+        .id  = 0x0b,
+        .val = 0x01,
     },{
-        .id  = 0xa,
-        .val = 0xe0560,
+        .id  = 0x0a,
+        .val = 0x0e0560,
     },
 };
 
 static const desc_param glue(paramaters_ten_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0xf00000,
     },
 };
 
 static const desc_param glue(paramaters_eleven_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0xf00000,
     },
 };
 
 static const desc_param glue(paramaters_twelve_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0xf00000,
     },
 };
 
 static const desc_param glue(paramaters_thirteen_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0xf00000,
     },
 };
 
 static const desc_param glue(paramaters_fourteen_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x40018f,
     },{
-        .id  = 0xc,
+        .id  = 0x0c,
         .val = 0x373c,
     },{
-        .id  = 0xe,
-        .val = 0x5,
+        .id  = 0x0e,
+        .val = 0x05,
     },{
         .id  = 0x12,
         .val = 0x80000000,
@@ -256,17 +256,17 @@ static const desc_param glue(paramaters_fourteen_, PARAM)[] = {
 
 static const desc_param glue(paramaters_fifteen_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x40018f,
     },{
-        .id  = 0xc,
+        .id  = 0x0c,
         .val = 0x373c,
     },{
-        .id  = 0xe,
-        .val = 0x5,
+        .id  = 0x0e,
+        .val = 0x05,
     },{
         .id  = 0x12,
         .val = 0x80000000,
@@ -275,78 +275,78 @@ static const desc_param glue(paramaters_fifteen_, PARAM)[] = {
 
 static const desc_param glue(paramaters_sixteen_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x40018f,
     },{
-        .id  = 0xc,
+        .id  = 0x0c,
         .val = 0x3c,
     },
 };
 
 static const desc_param glue(paramaters_seventeen_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x40018f,
     },{
-        .id  = 0xc,
+        .id  = 0x0c,
         .val = 0x3c,
     },
 };
 
 static const desc_param glue(paramaters_eighteen_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x40018f,
     },{
-        .id  = 0xc,
+        .id  = 0x0c,
         .val = 0x373c,
     },{
-        .id  = 0xd,
+        .id  = 0x0d,
         .val = 0x270300,
     },{
-        .id  = 0xe,
-        .val = 0x5,
+        .id  = 0x0e,
+        .val = 0x05,
     },
 };
 
 static const desc_param glue(paramaters_nineteen_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x40018f,
     },{
-        .id  = 0xc,
+        .id  = 0x0c,
         .val = 0x373c,
     },
 };
 
 static const desc_param glue(paramaters_twenty_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0xf00040,
     },
 };
 
 static const desc_param glue(paramaters_twenty_one_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x600080,
     },{
         .id  = 0x13,
@@ -356,363 +356,363 @@ static const desc_param glue(paramaters_twenty_one_, PARAM)[] = {
 
 static const desc_param glue(paramaters_twenty_two_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x20010b,
     },{
-        .id  = 0xe,
-        .val = 0xb,
+        .id  = 0x0e,
+        .val = 0x0b,
     },{
-        .id  = 0xd,
+        .id  = 0x0d,
         .val = 0x80000000,
     },
 };
 
 static const desc_param glue(paramaters_twenty_three_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x20010b,
     },{
-        .id  = 0xe,
-        .val = 0xb,
+        .id  = 0x0e,
+        .val = 0x0b,
     },{
-        .id  = 0xd,
+        .id  = 0x0d,
         .val = 0x80000000,
     },
 };
 
 static const desc_param glue(paramaters_twenty_four_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x20010b,
     },{
-        .id  = 0xe,
-        .val = 0xb,
+        .id  = 0x0e,
+        .val = 0x0b,
     },{
-        .id  = 0xd,
+        .id  = 0x0d,
         .val = 0x80000000,
     },
 };
 
 static const desc_param glue(paramaters_twenty_five_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x11,
     },{
-        .id  = 0xb,
-        .val = 0x1,
+        .id  = 0x0b,
+        .val = 0x01,
     },{
-        .id  = 0xa,
-        .val = 0xe0560,
+        .id  = 0x0a,
+        .val = 0x0e0560,
     },
 };
 
 static const desc_param glue(paramaters_twenty_six_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x20010f,
     },{
-        .id  = 0xe,
-        .val = 0x2,
+        .id  = 0x0e,
+        .val = 0x02,
     },
 };
 
 static const desc_param glue(paramaters_a_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x100391,
     },{
-        .id  = 0xe,
-        .val = 0x1,
+        .id  = 0x0e,
+        .val = 0x01,
     },{
-        .id  = 0xb,
-        .val = 0x1,
+        .id  = 0x0b,
+        .val = 0x01,
     },{
-        .id  = 0xa,
+        .id  = 0x0a,
         .val = 0x1e0560,
     },
 };
 
 static const desc_param glue(paramaters_b_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x20010b,
     },{
-        .id  = 0xe,
-        .val = 0xa,
+        .id  = 0x0e,
+        .val = 0x0a,
     },{
-        .id  = 0xd,
+        .id  = 0x0d,
         .val = 0x80051f17,
     },{
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },
 };
 
 static const desc_param glue(paramaters_c_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x20010f,
     },{
-        .id  = 0xe,
-        .val = 0x2,
+        .id  = 0x0e,
+        .val = 0x02,
     },{
         .id  = 0x12,
-        .val = 0x34040,
+        .val = 0x034040,
     },{
-        .id  = 0xd,
+        .id  = 0x0d,
         .val = 0x80000000,
     },
 };
 
 static const desc_param glue(paramaters_d_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x20010f,
     },{
-        .id  = 0xe,
-        .val = 0x2,
+        .id  = 0x0e,
+        .val = 0x02,
     },{
         .id  = 0x12,
-        .val = 0x34040,
+        .val = 0x034040,
     },{
-        .id  = 0xd,
+        .id  = 0x0d,
         .val = 0x80000000,
     },
 };
 
 static const desc_param glue(paramaters_e_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x20010f,
     },{
-        .id  = 0xe,
-        .val = 0x2,
+        .id  = 0x0e,
+        .val = 0x02,
     },
 };
 
 static const desc_param glue(paramaters_f_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x20010f,
     },{
-        .id  = 0xe,
-        .val = 0x2,
+        .id  = 0x0e,
+        .val = 0x02,
     },
 };
 
 static const desc_param glue(paramaters_one_a_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x40018f,
     },{
-        .id  = 0xc,
+        .id  = 0x0c,
         .val = 0x373c,
     },{
-        .id  = 0xd,
+        .id  = 0x0d,
         .val = 0x270300,
     },{
-        .id  = 0xe,
-        .val = 0x5,
+        .id  = 0x0e,
+        .val = 0x05,
     },
 };
 
 static const desc_param glue(paramaters_one_b_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x40018f,
     },{
-        .id  = 0xc,
+        .id  = 0x0c,
         .val = 0x373c,
     },
 };
 
 static const desc_param glue(paramaters_one_c_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x400001,
     },{
-        .id  = 0xc,
+        .id  = 0x0c,
         .val = 0x20,
     },
 };
 
 static const desc_param glue(paramaters_one_d_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x400000,
     },{
-        .id  = 0xc,
+        .id  = 0x0c,
         .val = 0x20,
     },
 };
 
 static const desc_param glue(paramaters_one_e_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x400300,
     },{
-        .id  = 0xc,
+        .id  = 0x0c,
         .val = 0x10,
     },{
-        .id  = 0xe,
-        .val = 0x1,
+        .id  = 0x0e,
+        .val = 0x01,
     },
 };
 
 static const desc_param glue(paramaters_one_f_, PARAM)[] = {
     {
-        .id  = 0x5,
-        .val = 0x0,
+        .id  = 0x05,
+        .val = 0x00,
     },{
-        .id  = 0x9,
+        .id  = 0x09,
         .val = 0x400200,
     },{
-        .id  = 0xc,
+        .id  = 0x0c,
         .val = 0x20,
     },
 };
 
 static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
     {
-        .nid     = 0x0,
+        .nid     = 0x00,
         .name    = "zero",
         .params  = glue(paramaters_zero_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_zero_, PARAM)),
     },{
-        .nid     = 0x1,
+        .nid     = 0x01,
         .name    = "one",
         .params  = glue(paramaters_one_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_one_, PARAM)),
     },{
-        .nid     = 0x2,
+        .nid     = 0x02,
         .name    = "two",
         .params  = glue(paramaters_two_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_two_, PARAM)),
     },{
-        .nid     = 0x3,
+        .nid     = 0x03,
         .name    = "three",
         .params  = glue(paramaters_three_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_three_, PARAM)),
     },{
-        .nid     = 0x4,
+        .nid     = 0x04,
         .name    = "four",
         .params  = glue(paramaters_four_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_four_, PARAM)),
     },{
-        .nid     = 0x5,
+        .nid     = 0x05,
         .name    = "five",
         .params  = glue(paramaters_five_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_five_, PARAM)),
     },{
-        .nid     = 0x6,
+        .nid     = 0x06,
         .name    = "six",
         .params  = glue(paramaters_six_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_six_, PARAM)),
     },{
-        .nid     = 0x7,
+        .nid     = 0x07,
         .name    = "seven",
         .params  = glue(paramaters_seven_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_seven_, PARAM)),
         .stindex = 1,
         .conn    = (uint32_t[]) { 0x24 },
     },{
-        .nid     = 0x8,
+        .nid     = 0x08,
         .name    = "eight",
         .params  = glue(paramaters_eight_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_eight_, PARAM)),
         .stindex = 1,
         .conn    = (uint32_t[]) { 0x23 },
     },{
-        .nid     = 0x9,
+        .nid     = 0x09,
         .name    = "nine",
         .params  = glue(paramaters_nine_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_nine_, PARAM)),
         .stindex = 1,
         .conn    = (uint32_t[]) { 0x22 },
     },{
-        .nid     = 0xa,
+        .nid     = 0x0a,
         .name    = "a",
         .params  = glue(paramaters_a_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_a_, PARAM)),
         .stindex = 1,
         .conn    = (uint32_t[]) { 0x1f },
     },{
-        .nid     = 0xb,
+        .nid     = 0x0b,
         .name    = "b",
         .params  = glue(paramaters_b_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_b_, PARAM)),
         .conn    = (uint32_t[]) { 0x1b1a1918 },
     },{
-        .nid     = 0xc,
+        .nid     = 0x0c,
         .name    = "c",
         .params  = glue(paramaters_c_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_c_, PARAM)),
         .conn    = (uint32_t[]) { 0xb02 },
     },{
-        .nid     = 0xd,
+        .nid     = 0x0d,
         .name    = "d",
         .params  = glue(paramaters_d_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_d_, PARAM)),
         .conn    = (uint32_t[]) { 0xb03 },
     },{
-        .nid     = 0xe,
+        .nid     = 0x0e,
         .name    = "e",
         .params  = glue(paramaters_e_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_e_, PARAM)),
         .conn    = (uint32_t[]) { 0xb04 },
     },{
-        .nid     = 0xf,
+        .nid     = 0x0f,
         .name    = "f",
         .params  = glue(paramaters_f_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_f_, PARAM)),
