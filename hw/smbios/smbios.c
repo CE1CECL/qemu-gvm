@@ -582,11 +582,11 @@ static void smbios_build_type_0_table(void)
 
     t->bios_rom_size = 0; /* hardcoded in SeaBIOS with FIXME comment */
 
-    t->bios_characteristics = cpu_to_le64(0x08); /* Not supported */
+    t->bios_characteristics = cpu_to_le64(0); /* Not supported */
     t->bios_characteristics_extension_bytes[0] = 0;
-    t->bios_characteristics_extension_bytes[1] = 0x08; /* TCD/SVVP | VM */
+    t->bios_characteristics_extension_bytes[1] = 0; /* TCD/SVVP | VM */
     if (type0.uefi) {
-        t->bios_characteristics_extension_bytes[1] |= 0x08; /* |= UEFI */
+        t->bios_characteristics_extension_bytes[1] |= 0; /* |= UEFI */
     }
 
     if (type0.have_major_minor) {
