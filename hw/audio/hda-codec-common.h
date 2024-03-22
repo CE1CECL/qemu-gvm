@@ -698,25 +698,25 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "c",
         .params  = glue(paramaters_c_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_c_, PARAM)),
-        .conn    = (uint32_t[]) { 0xb02 },
+        .conn    = (uint32_t[]) { 0x0b02 },
     },{
         .nid     = 0x0d,
         .name    = "d",
         .params  = glue(paramaters_d_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_d_, PARAM)),
-        .conn    = (uint32_t[]) { 0xb03 },
+        .conn    = (uint32_t[]) { 0x0b03 },
     },{
         .nid     = 0x0e,
         .name    = "e",
         .params  = glue(paramaters_e_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_e_, PARAM)),
-        .conn    = (uint32_t[]) { 0xb04 },
+        .conn    = (uint32_t[]) { 0x0b04 },
     },{
         .nid     = 0x0f,
         .name    = "f",
         .params  = glue(paramaters_f_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_f_, PARAM)),
-        .conn    = (uint32_t[]) { 0xb05 },
+        .conn    = (uint32_t[]) { 0x0b05 },
     },{
         .nid     = 0x10,
         .name    = "ten",
@@ -742,7 +742,7 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "fourteen",
         .params  = glue(paramaters_fourteen_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_fourteen_, PARAM)),
-        .conn    = (uint32_t[]) { 0xf0e0d0c },
+        .conn    = (uint32_t[]) { 0x0f0e0d0c },
         .config  = 0x90100140,
         .pinctl  = 0x40,
     },{
@@ -750,7 +750,7 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "fifteen",
         .params  = glue(paramaters_fifteen_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_fifteen_, PARAM)),
-        .conn    = (uint32_t[]) { 0xf0e0d0c },
+        .conn    = (uint32_t[]) { 0x0f0e0d0c },
         .config  = 0x012b4050,
         .pinctl  = 0xc4,
     },{
@@ -758,7 +758,7 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "eighteen",
         .params  = glue(paramaters_eighteen_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_eighteen_, PARAM)),
-        .conn    = (uint32_t[]) { 0xf0e0d0c },
+        .conn    = (uint32_t[]) { 0x0f0e0d0c },
         .config  = 0x90a00110,
         .pinctl  = 0x24,
     },{
@@ -766,7 +766,7 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "one_a",
         .params  = glue(paramaters_one_a_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_one_a_, PARAM)),
-        .conn    = (uint32_t[]) { 0xf0e0d0c },
+        .conn    = (uint32_t[]) { 0x0f0e0d0c },
         .config  = 0x018b3020,
         .pinctl  = 0x20,
     },{
@@ -789,7 +789,7 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .params  = glue(paramaters_one_e_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_one_e_, PARAM)),
         .config  = 0x014be060,
-        .conn    = (uint32_t[]) { 0x6 },
+        .conn    = (uint32_t[]) { 0x06 },
         .pinctl  = 0x40,
     },{
         .nid     = 0x1f,
@@ -836,7 +836,7 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "twenty_six",
         .params  = glue(paramaters_twenty_six_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_twenty_six_, PARAM)),
-        .conn    = (uint32_t[]) { 0xb25 },
+        .conn    = (uint32_t[]) { 0x0b25 },
     },
 };
 
