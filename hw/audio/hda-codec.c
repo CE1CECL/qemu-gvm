@@ -500,16 +500,12 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         printf("12/8 id/payload 1\n");
         verb = (data >> 8) & 0xfff;
         payload = data & 0x00ff;
-    } else if ((data & 0x70000) == 0x70000) {
-        printf("12/8 id/payload 2\n");
-        verb = (data >> 8) & 0xfff;
-        payload = data & 0x00ff;
     } else if ((data & 0xb0000) == 0xb0000) {
-        printf("12/8 id/payload 3\n");
+        printf("12/8 id/payload 2 \n");
         verb = (data >> 8) & 0xfff;
         payload = data & 0x00ff;
     } else {
-        printf("4/16 id/payload\n");
+        printf("4/16 id/payload 3\n");
         verb = (data >> 8) & 0xf00;
         payload = data & 0xffff;
     }
