@@ -348,6 +348,9 @@ static const desc_param glue(paramaters_twenty_one_, PARAM)[] = {
     },{
         .id  = 0x09,
         .val = 0x600080,
+    },{
+        .id  = 0x13,
+        .val = 0x20,
     },
 };
 
@@ -620,6 +623,9 @@ static const desc_param glue(paramaters_one_f_, PARAM)[] = {
     },
 };
 
+
+
+
 static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
     {
         .nid     = 0x00,
@@ -836,6 +842,7 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .conn    = (uint32_t[]) { 0x0b25 },
     },
 };
+
 
 /*
 
