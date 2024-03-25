@@ -500,12 +500,16 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         printf("12/8 id/payload 1\n");
         verb = (data >> 8) & 0xfff;
         payload = data & 0x00ff;
+    } else if ((data & 0x70000) == 0x70000) {
+        printf("12/8 id/payload 2\n");
+        verb = (data >> 8) & 0xfff;
+        payload = data & 0x00ff;
     } else if ((data & 0xb0000) == 0xb0000) {
-        printf("12/8 id/payload 2 \n");
+        printf("12/8 id/payload 3\n");
         verb = (data >> 8) & 0xfff;
         payload = data & 0x00ff;
     } else {
-        printf("4/16 id/payload 3\n");
+        printf("4/16 id/payload 0\n");
         verb = (data >> 8) & 0xf00;
         payload = data & 0xffff;
     }
@@ -590,6 +594,12 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         hda_audio_setup(st);
         hda_codec_response(hda, true, 0);
         break;
+
+    case AC_VERB_SET_POWER_STATE:
+    case AC_VERB_GET_POWER_STATE:
+        hda_codec_response(hda, true, 0);
+        break;
+
     case AC_VERB_GET_STREAM_FORMAT:
         st = a->st + node->stindex;
         if (st->node == NULL) {
