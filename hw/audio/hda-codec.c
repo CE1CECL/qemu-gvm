@@ -496,23 +496,11 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     const desc_param *param;
     uint32_t verb, payload, response, count, shift;
 
-    if ((data & 0x30000) == 0x30000) {
-        printf("12/8 id/payload 1\n");
+    dprint(a, 2, "%s: data: 0x%x\n",
+           __func__, data);
+
         verb = (data >> 8) & 0xfff;
         payload = data & 0x00ff;
-    } else if ((data & 0x70000) == 0x70000) {
-        printf("12/8 id/payload 2\n");
-        verb = (data >> 8) & 0xfff;
-        payload = data & 0x00ff;
-    } else if ((data & 0xb0000) == 0xb0000) {
-        printf("12/8 id/payload 3\n");
-        verb = (data >> 8) & 0xfff;
-        payload = data & 0x00ff;
-    } else {
-        printf("4/16 id/payload 0\n");
-        verb = (data >> 8) & 0xf00;
-        payload = data & 0xffff;
-    }
 
     node = hda_codec_find_node(a->desc, nid);
     if (node == NULL) {
@@ -595,6 +583,8 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         hda_codec_response(hda, true, 0);
         break;
 
+    case AC_VERB_GET_PIN_SENSE:
+    case AC_VERB_GET_SDI_SELECT:
     case AC_VERB_SET_POWER_STATE:
     case AC_VERB_GET_POWER_STATE:
         hda_codec_response(hda, true, 0);
