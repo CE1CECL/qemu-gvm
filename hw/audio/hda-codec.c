@@ -496,6 +496,8 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     const desc_param *param;
     uint32_t verb, payload, response, count, shift;
 
+	uint32_t pwrst = 0x0;
+
     dprint(a, 2, "%s: data: 0x%x\n",
            __func__, data);
 
@@ -583,11 +585,23 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         hda_codec_response(hda, true, 0);
         break;
 
-    case AC_VERB_GET_PIN_SENSE:
-    case AC_VERB_GET_SDI_SELECT:
     case AC_VERB_SET_POWER_STATE:
-    case AC_VERB_GET_POWER_STATE:
+	if (payload == 0x0) {
+		pwrst = 0x0;
+	} else if (payload == 0x1) {
+		pwrst = 0x11;
+	} else if (payload == 0x2) {
+		pwrst = 0x2;
+	} else if (payload == 0x3) {
+		pwrst = 0x233;
+	} else {
+		pwrst = 0x0;
+	}
         hda_codec_response(hda, true, 0);
+        break;
+
+    case AC_VERB_GET_POWER_STATE:
+        hda_codec_response(hda, true, pwrst);
         break;
 
     case AC_VERB_GET_STREAM_FORMAT:
