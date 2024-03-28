@@ -713,8 +713,8 @@ static void vscsi_inquiry_no_target(VSCSIState *s, vscsi_req *req)
     resp_data[3] = 0x02;   /* Resp data format */
     resp_data[4] = 36 - 5; /* Additional length */
     resp_data[7] = 0x10;   /* Sync transfers */
-    memcpy(&resp_data[16], "CECL EMPTY      ", 16);
-    memcpy(&resp_data[8], "CECL    ", 8);
+    memcpy(&resp_data[16], "2007 EMPTY      ", 16);
+    memcpy(&resp_data[8], "2007    ", 8);
 
     req->writing = 0;
     vscsi_preprocess_desc(req);

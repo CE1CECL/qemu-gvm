@@ -22,7 +22,7 @@
 
 static void e500plat_fixup_devtree(void *fdt)
 {
-    const char model[] = "CECL ppce500";
+    const char model[] = "2007 ppce500";
     const char compatible[] = "fsl,qemu-e500";
 
     qemu_fdt_setprop(fdt, "/", "model", model, sizeof(model));

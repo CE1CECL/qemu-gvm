@@ -2563,20 +2563,20 @@ int ide_init_drive(IDEState *s, BlockBackend *blk, IDEDriveKind kind,
         pstrcpy(s->drive_serial_str, sizeof(s->drive_serial_str), serial);
     } else {
         snprintf(s->drive_serial_str, sizeof(s->drive_serial_str),
-                 "CECL%05d", s->drive_serial);
+                 "2007%05d", s->drive_serial);
     }
     if (model) {
         pstrcpy(s->drive_model_str, sizeof(s->drive_model_str), model);
     } else {
         switch (kind) {
         case IDE_CD:
-            strcpy(s->drive_model_str, "CECL DVD-ROM");
+            strcpy(s->drive_model_str, "2007 DVD-ROM");
             break;
         case IDE_CFATA:
-            strcpy(s->drive_model_str, "CECL MICRODRIVE");
+            strcpy(s->drive_model_str, "2007 MICRODRIVE");
             break;
         default:
-            strcpy(s->drive_model_str, "CECL HARDDISK");
+            strcpy(s->drive_model_str, "2007 HARDDISK");
             break;
         }
     }

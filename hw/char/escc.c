@@ -959,7 +959,7 @@ static void escc_realize(DeviceState *dev, Error **errp)
 
     if (s->chn[0].type == escc_mouse) {
         qemu_add_mouse_event_handler(sunmouse_event, &s->chn[0], 0,
-                                     "CECL Sun Mouse");
+                                     "2007 Sun Mouse");
     }
     if (s->chn[1].type == escc_kbd) {
         s->chn[1].hs = qemu_input_handler_register((DeviceState *)(&s->chn[1]),

@@ -80,8 +80,8 @@ OBJECT_DECLARE_SIMPLE_TYPE(USBCCIDState, USB_CCID_DEV)
 #define CCID_CONTROL_GET_CLOCK_FREQUENCIES  0x2
 #define CCID_CONTROL_GET_DATA_RATES         0x3
 
-#define CCID_PRODUCT_DESCRIPTION        "CECL USB CCID"
-#define CCID_VENDOR_DESCRIPTION         "CECL"
+#define CCID_PRODUCT_DESCRIPTION        "2007 USB CCID"
+#define CCID_VENDOR_DESCRIPTION         "2007"
 #define CCID_INTERFACE_NAME             "CCID Interface"
 #define CCID_SERIAL_NUMBER_STRING       "1"
 /*
@@ -417,8 +417,8 @@ enum {
 };
 
 static const USBDescStrings desc_strings = {
-    [STR_MANUFACTURER]  = "CECL",
-    [STR_PRODUCT]       = "CECL USB CCID",
+    [STR_MANUFACTURER]  = "2007",
+    [STR_PRODUCT]       = "2007 USB CCID",
     [STR_SERIALNUMBER]  = "1",
     [STR_INTERFACE]     = "CCID Interface",
 };
@@ -1444,7 +1444,7 @@ static void ccid_class_initfn(ObjectClass *klass, void *data)
     HotplugHandlerClass *hc = HOTPLUG_HANDLER_CLASS(klass);
 
     uc->realize        = ccid_realize;
-    uc->product_desc   = "CECL USB CCID";
+    uc->product_desc   = "2007 USB CCID";
     uc->usb_desc       = &desc_ccid;
     uc->handle_reset   = ccid_handle_reset;
     uc->handle_control = ccid_handle_control;

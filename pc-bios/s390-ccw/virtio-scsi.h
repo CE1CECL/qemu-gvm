@@ -25,7 +25,7 @@
 #define VIRTIO_SCSI_S_OK                     0x00
 #define VIRTIO_SCSI_S_BAD_TARGET             0x03
 
-#define QEMU_CDROM_SIGNATURE "CECL CD-ROM     "
+#define QEMU_CDROM_SIGNATURE "2007 CD-ROM     "
 
 enum virtio_scsi_vq_id {
     VR_CONTROL  = 0,

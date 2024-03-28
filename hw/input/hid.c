@@ -511,20 +511,20 @@ void hid_free(HIDState *hs)
 }
 
 static QemuInputHandler hid_keyboard_handler = {
-    .name  = "CECL HID Keyboard",
+    .name  = "2007 HID Keyboard",
     .mask  = INPUT_EVENT_MASK_KEY,
     .event = hid_keyboard_event,
 };
 
 static QemuInputHandler hid_mouse_handler = {
-    .name  = "CECL HID Mouse",
+    .name  = "2007 HID Mouse",
     .mask  = INPUT_EVENT_MASK_BTN | INPUT_EVENT_MASK_REL,
     .event = hid_pointer_event,
     .sync  = hid_pointer_sync,
 };
 
 static QemuInputHandler hid_tablet_handler = {
-    .name  = "CECL HID Tablet",
+    .name  = "2007 HID Tablet",
     .mask  = INPUT_EVENT_MASK_BTN | INPUT_EVENT_MASK_ABS,
     .event = hid_pointer_event,
     .sync  = hid_pointer_sync,

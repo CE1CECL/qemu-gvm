@@ -40,7 +40,7 @@
 
 static void usb_audio_reinit(USBDevice *dev, unsigned channels);
 
-#define USBAUDIO_VENDOR_NUM     0x1960 /* CRC16() of "QEMU" */
+#define USBAUDIO_VENDOR_NUM     0x2007 /* CRC16() of "QEMU" */
 #define USBAUDIO_PRODUCT_NUM    0x0002
 
 #define DEV_CONFIG_VALUE        1 /* The one and only */
@@ -73,8 +73,8 @@ enum usb_audio_strings {
 };
 
 static const USBDescStrings usb_audio_stringtable = {
-    [STRING_MANUFACTURER]       = "CECL",
-    [STRING_PRODUCT]            = "CECL USB Audio",
+    [STRING_MANUFACTURER]       = "2007",
+    [STRING_PRODUCT]            = "2007 USB Audio",
     [STRING_SERIALNUMBER]       = "1",
     [STRING_CONFIG]             = "Audio Configuration",
     [STRING_USBAUDIO_CONTROL]   = "Audio Device",
@@ -1005,7 +1005,7 @@ static void usb_audio_class_init(ObjectClass *klass, void *data)
     dc->vmsd          = &vmstate_usb_audio;
     device_class_set_props(dc, usb_audio_properties);
     set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
-    k->product_desc   = "CECL USB Audio Interface";
+    k->product_desc   = "2007 USB Audio Interface";
     k->realize        = usb_audio_realize;
     k->handle_reset   = usb_audio_handle_reset;
     k->handle_control = usb_audio_handle_control;

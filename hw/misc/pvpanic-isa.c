@@ -70,7 +70,7 @@ static void build_pvpanic_isa_aml(AcpiDevAmlIf *adev, Aml *scope)
     PVPanicISAState *s = PVPANIC_ISA_DEVICE(adev);
     Aml *dev = aml_device("PEVT");
 
-    aml_append(dev, aml_name_decl("_HID", aml_string("CECL0001")));
+    aml_append(dev, aml_name_decl("_HID", aml_string("20070001")));
 
     crs = aml_resource_template();
     aml_append(crs,

@@ -16,9 +16,9 @@
 
 #include "standard-headers/linux/input.h"
 
-#define VIRTIO_ID_NAME_KEYBOARD "CECL Phyzio Keyboard"
-#define VIRTIO_ID_NAME_MOUSE    "CECL Phyzio Mouse"
-#define VIRTIO_ID_NAME_TABLET   "CECL Phyzio Tablet"
+#define VIRTIO_ID_NAME_KEYBOARD "2007 Phyzio Keyboard"
+#define VIRTIO_ID_NAME_MOUSE    "2007 Phyzio Mouse"
+#define VIRTIO_ID_NAME_TABLET   "2007 Phyzio Tablet"
 
 /* ----------------------------------------------------------------- */
 
@@ -255,7 +255,7 @@ static struct virtio_input_config virtio_keyboard_config[] = {
         .size      = sizeof(struct virtio_input_devids),
         .u.ids     = {
             .bustype = const_le16(BUS_VIRTUAL),
-            .vendor  = const_le16(0x1960), /* same we use for usb hid devices */
+            .vendor  = const_le16(0x2007), /* same we use for usb hid devices */
             .product = const_le16(0x0001),
             .version = const_le16(0x0001),
         },
@@ -311,7 +311,7 @@ static struct virtio_input_config virtio_mouse_config_v1[] = {
         .size      = sizeof(struct virtio_input_devids),
         .u.ids     = {
             .bustype = const_le16(BUS_VIRTUAL),
-            .vendor  = const_le16(0x1960), /* same we use for usb hid devices */
+            .vendor  = const_le16(0x2007), /* same we use for usb hid devices */
             .product = const_le16(0x0002),
             .version = const_le16(0x0001),
         },
@@ -336,7 +336,7 @@ static struct virtio_input_config virtio_mouse_config_v2[] = {
         .size      = sizeof(struct virtio_input_devids),
         .u.ids     = {
             .bustype = const_le16(BUS_VIRTUAL),
-            .vendor  = const_le16(0x1960), /* same we use for usb hid devices */
+            .vendor  = const_le16(0x2007), /* same we use for usb hid devices */
             .product = const_le16(0x0002),
             .version = const_le16(0x0002),
         },
@@ -404,7 +404,7 @@ static struct virtio_input_config virtio_tablet_config_v1[] = {
         .size      = sizeof(struct virtio_input_devids),
         .u.ids     = {
             .bustype = const_le16(BUS_VIRTUAL),
-            .vendor  = const_le16(0x1960), /* same we use for usb hid devices */
+            .vendor  = const_le16(0x2007), /* same we use for usb hid devices */
             .product = const_le16(0x0003),
             .version = const_le16(0x0001),
         },
@@ -441,7 +441,7 @@ static struct virtio_input_config virtio_tablet_config_v2[] = {
         .size      = sizeof(struct virtio_input_devids),
         .u.ids     = {
             .bustype = const_le16(BUS_VIRTUAL),
-            .vendor  = const_le16(0x1960), /* same we use for usb hid devices */
+            .vendor  = const_le16(0x2007), /* same we use for usb hid devices */
             .product = const_le16(0x0003),
             .version = const_le16(0x0002),
         },

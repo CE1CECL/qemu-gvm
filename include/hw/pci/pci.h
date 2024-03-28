@@ -52,12 +52,12 @@ extern bool pci_available;
 #define PCI_DEVICE_ID_MARVELL_GT6412X    0x4620
 
 /* QEMU/Bochs VGA (0x1234) */
-#define PCI_VENDOR_ID_QEMU               0x1960
+#define PCI_VENDOR_ID_QEMU               0x2007
 #define PCI_DEVICE_ID_QEMU_VGA           0x1111
 #define PCI_DEVICE_ID_QEMU_IPMI          0x1112
 
 /* VMWare (0x15ad) */
-#define PCI_VENDOR_ID_VMWARE             0x1960
+#define PCI_VENDOR_ID_VMWARE             0x2007
 #define PCI_DEVICE_ID_VMWARE_SVGA2       0x0405
 #define PCI_DEVICE_ID_VMWARE_SVGA        0x0710
 #define PCI_DEVICE_ID_VMWARE_NET         0x0720
@@ -72,9 +72,9 @@ extern bool pci_available;
 #define PCI_DEVICE_ID_INTEL_82801IR      0x2922
 
 /* Red Hat / Qumranet (for QEMU) -- see pci-ids.txt */
-#define PCI_VENDOR_ID_REDHAT_QUMRANET    0x1960
-#define PCI_SUBVENDOR_ID_REDHAT_QUMRANET 0x1960
-#define PCI_SUBDEVICE_ID_QEMU            0x1960
+#define PCI_VENDOR_ID_REDHAT_QUMRANET    0x2007
+#define PCI_SUBVENDOR_ID_REDHAT_QUMRANET 0x2007
+#define PCI_SUBDEVICE_ID_QEMU            0x2007
 
 #define PCI_DEVICE_ID_VIRTIO_NET         0x1000
 #define PCI_DEVICE_ID_VIRTIO_BLOCK       0x1001
@@ -88,7 +88,7 @@ extern bool pci_available;
 #define PCI_DEVICE_ID_VIRTIO_IOMMU       0x1014
 #define PCI_DEVICE_ID_VIRTIO_MEM         0x1015
 
-#define PCI_VENDOR_ID_REDHAT             0x1960
+#define PCI_VENDOR_ID_REDHAT             0x2007
 #define PCI_DEVICE_ID_REDHAT_BRIDGE      0x0001
 #define PCI_DEVICE_ID_REDHAT_SERIAL      0x0002
 #define PCI_DEVICE_ID_REDHAT_SERIAL2     0x0003

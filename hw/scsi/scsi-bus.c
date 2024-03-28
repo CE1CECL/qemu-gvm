@@ -555,8 +555,8 @@ static bool scsi_target_emulate_inquiry(SCSITargetReq *r)
         r->buf[3] = 2 | 0x10; /* HiSup, response data format */
         r->buf[4] = r->len - 5; /* Additional Length = (Len - 1) - 4 */
         r->buf[7] = 0x10 | (r->req.bus->info->tcq ? 0x02 : 0); /* Sync, TCQ.  */
-        memcpy(&r->buf[8], "CECL    ", 8);
-        memcpy(&r->buf[16], "CECL TARGET     ", 16);
+        memcpy(&r->buf[8], "2007    ", 8);
+        memcpy(&r->buf[16], "2007 TARGET     ", 16);
         pstrcpy((char *) &r->buf[32], 4, qemu_hw_version());
     }
     return true;

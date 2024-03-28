@@ -2475,7 +2475,7 @@ static void scsi_realize(SCSIDevice *dev, Error **errp)
         s->version = g_strdup(qemu_hw_version());
     }
     if (!s->vendor) {
-        s->vendor = g_strdup("CECL");
+        s->vendor = g_strdup("2007");
     }
     if (!s->device_id) {
         if (s->serial) {
@@ -2530,7 +2530,7 @@ static void scsi_hd_realize(SCSIDevice *dev, Error **errp)
     s->qdev.blocksize = s->qdev.conf.logical_block_size;
     s->qdev.type = TYPE_DISK;
     if (!s->product) {
-        s->product = g_strdup("CECL HARDDISK");
+        s->product = g_strdup("2007 HARDDISK");
     }
     scsi_realize(&s->qdev, errp);
 out:
@@ -2559,7 +2559,7 @@ static void scsi_cd_realize(SCSIDevice *dev, Error **errp)
     s->qdev.type = TYPE_ROM;
     s->features |= 1 << SCSI_DISK_F_REMOVABLE;
     if (!s->product) {
-        s->product = g_strdup("CECL CD-ROM");
+        s->product = g_strdup("2007 CD-ROM");
     }
     scsi_realize(&s->qdev, errp);
     aio_context_release(ctx);

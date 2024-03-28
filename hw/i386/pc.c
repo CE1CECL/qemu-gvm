@@ -105,9 +105,9 @@
  * depending on QEMU versions up to QEMU 2.4.
  */
 #define PC_CPU_MODEL_IDS(v) \
-    { "cecl32-" TYPE_X86_CPU, "model-id", "CECL Phyzical CPU version " v, },\
-    { "cecl64-" TYPE_X86_CPU, "model-id", "CECL Phyzical CPU version " v, },\
-    { "athlon-" TYPE_X86_CPU, "model-id", "CECL Phyzical CPU version " v, },
+    { "200732-" TYPE_X86_CPU, "model-id", "2007 Phyzical CPU version " v, },\
+    { "200764-" TYPE_X86_CPU, "model-id", "2007 Phyzical CPU version " v, },\
+    { "athlon-" TYPE_X86_CPU, "model-id", "2007 Phyzical CPU version " v, },
 
 GlobalProperty pc_compat_7_0[] = {};
 const size_t pc_compat_7_0_len = G_N_ELEMENTS(pc_compat_7_0);

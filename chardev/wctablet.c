@@ -179,7 +179,7 @@ static void wctablet_input_sync(DeviceState *dev)
 }
 
 static QemuInputHandler wctablet_handler = {
-    .name  = "CECL Wacom Pen Tablet",
+    .name  = "2007 Wacom Pen Tablet",
     .mask  = INPUT_EVENT_MASK_BTN | INPUT_EVENT_MASK_ABS,
     .event = wctablet_input_event,
     .sync  = wctablet_input_sync,

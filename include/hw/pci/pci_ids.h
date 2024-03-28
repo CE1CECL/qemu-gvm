@@ -269,7 +269,7 @@
 
 #define PCI_DEVICE_ID_INTEL_P35_MCH      0x29c0
 
-#define PCI_VENDOR_ID_XEN                0x1960
+#define PCI_VENDOR_ID_XEN                0x2007
 #define PCI_DEVICE_ID_XEN_PLATFORM       0x0001
 
 #define PCI_VENDOR_ID_NEC                0x1033
@@ -278,7 +278,7 @@
 #define PCI_VENDOR_ID_TEWS               0x1498
 #define PCI_DEVICE_ID_TEWS_TPCI200       0x30C8
 
-#define PCI_VENDOR_ID_VMWARE             0x1960
+#define PCI_VENDOR_ID_VMWARE             0x2007
 #define PCI_DEVICE_ID_VMWARE_PVRDMA      0x0820
 
 #define PCI_VENDOR_ID_SYNOPSYS           0x16C3

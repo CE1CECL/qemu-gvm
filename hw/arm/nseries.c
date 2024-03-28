@@ -847,7 +847,7 @@ static void n800_setup_nolo_tags(void *sram_base)
 
     memset(p, 0, 0x3000);
 
-    strcpy((void *) (p + 0), "CECL N800");
+    strcpy((void *) (p + 0), "2007 N800");
 
     strcpy((void *) (p + 8), "F5");
 
@@ -1152,7 +1152,7 @@ static int n8x0_atag_setup(void *p, int model)
 
     stw_p(w++, OMAP_TAG_LCD);			/* u16 tag */
     stw_p(w++, 36);				/* u16 len */
-    strcpy((void *) w, "CECL LCD panel");	/* char panel_name[16] */
+    strcpy((void *) w, "2007 LCD panel");	/* char panel_name[16] */
     w += 8;
     strcpy((void *) w, "blizzard");		/* char ctrl_name[16] */
     w += 8;
@@ -1272,11 +1272,11 @@ static int n8x0_atag_setup(void *p, int model)
     stw_p(w++, 24);				/* u16 len */
     strcpy((void *) w, "hw-build");		/* char component[12] */
     w += 6;
-    strcpy((void *) w, "CECL ");
+    strcpy((void *) w, "2007 ");
     pstrcat((void *) w, 12, qemu_hw_version()); /* char version[12] */
     w += 6;
 
-    tag = (model == 810) ? "1.1.10-cecl" : "1.1.6-cecl";
+    tag = (model == 810) ? "1.1.10-2007" : "1.1.6-2007";
     stw_p(w++, OMAP_TAG_VERSION_STR);		/* u16 tag */
     stw_p(w++, 24);				/* u16 len */
     strcpy((void *) w, "nolo");			/* char component[12] */

@@ -34,7 +34,7 @@
 #include "u2f.h"
 
 /* U2F key Vendor / Product */
-#define U2F_KEY_VENDOR_NUM     0x1960 /* CRC16() of "QEMU" */
+#define U2F_KEY_VENDOR_NUM     0x2007 /* CRC16() of "QEMU" */
 #define U2F_KEY_PRODUCT_NUM    0x0005
 
 enum {
@@ -46,7 +46,7 @@ enum {
 };
 
 static const USBDescStrings desc_strings = {
-    [STR_MANUFACTURER]     = "CECL",
+    [STR_MANUFACTURER]     = "2007",
     [STR_PRODUCT]          = "U2F USB key",
     [STR_SERIALNUMBER]     = "0",
     [STR_CONFIG]           = "U2F key config",
@@ -322,7 +322,7 @@ static void u2f_key_class_init(ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
     USBDeviceClass *uc = USB_DEVICE_CLASS(klass);
 
-    uc->product_desc   = "CECL U2F USB key";
+    uc->product_desc   = "2007 U2F USB key";
     uc->usb_desc       = &desc_u2f_key;
     uc->handle_reset   = u2f_key_handle_reset;
     uc->handle_control = u2f_key_handle_control;
@@ -330,7 +330,7 @@ static void u2f_key_class_init(ObjectClass *klass, void *data)
     uc->handle_attach  = usb_desc_attach;
     uc->realize        = u2f_key_realize;
     uc->unrealize      = u2f_key_unrealize;
-    dc->desc           = "CECL U2F key";
+    dc->desc           = "2007 U2F key";
     dc->vmsd           = &vmstate_u2f_key;
 }
 

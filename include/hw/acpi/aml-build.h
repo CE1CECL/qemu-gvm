@@ -4,8 +4,8 @@
 #include "hw/acpi/acpi-defs.h"
 #include "hw/acpi/bios-linker-loader.h"
 
-#define ACPI_BUILD_APPNAME6 "CECL  "
-#define ACPI_BUILD_APPNAME8 "1960TV  "
+#define ACPI_BUILD_APPNAME6 "2007  "
+#define ACPI_BUILD_APPNAME8 "2007TV  "
 
 #define ACPI_BUILD_TABLE_FILE "etc/acpi/tables"
 #define ACPI_BUILD_RSDP_FILE "etc/acpi/rsdp"

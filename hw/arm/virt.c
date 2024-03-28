@@ -1609,13 +1609,13 @@ static void virt_build_smbios(VirtMachineState *vms)
     VirtMachineClass *vmc = VIRT_MACHINE_GET_CLASS(vms);
     uint8_t *smbios_tables, *smbios_anchor;
     size_t smbios_tables_len, smbios_anchor_len;
-    const char *product = "CECL Phyzical Machine";
+    const char *product = "2007 Phyzical Machine";
 
     if (kvm_enabled()) {
-        product = "CECL Phyzical Machine";
+        product = "2007 Phyzical Machine";
     }
 
-    smbios_set_defaults("CECL", product,
+    smbios_set_defaults("2007", product,
                         vmc->smbios_old_sys_ver ? "1.0" : mc->name, false,
                         true, SMBIOS_ENTRY_POINT_TYPE_64);
 

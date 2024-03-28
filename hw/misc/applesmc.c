@@ -84,7 +84,7 @@ enum {
 #define smc_debug(...) do { } while (0)
 #endif
 
-static char default_osk[64] = "CECLCECLCECLCECLCECLCECLCECLCECLCECLCECLCECLCECLCECLCECLCECLCECL";
+static char default_osk[64] = "2007200720072007200720072007200720072007200720072007200720072007";
 
 struct AppleSMCData {
     uint8_t len;

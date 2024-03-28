@@ -119,9 +119,9 @@ enum {
 };
 
 static const USBDescStrings desc_strings = {
-    [STR_MANUFACTURER]    = "CECL",
-    [STR_PRODUCT_SERIAL]  = "CECL USB SERIAL",
-    [STR_PRODUCT_BRAILLE] = "CECL USB BAUM BRAILLE",
+    [STR_MANUFACTURER]    = "2007",
+    [STR_PRODUCT_SERIAL]  = "2007 USB SERIAL",
+    [STR_PRODUCT_BRAILLE] = "2007 USB BAUM BRAILLE",
     [STR_SERIALNUMBER]    = "39344488",
 };
 
@@ -666,7 +666,7 @@ static void usb_serial_class_initfn(ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
     USBDeviceClass *uc = USB_DEVICE_CLASS(klass);
 
-    uc->product_desc   = "CECL USB Serial";
+    uc->product_desc   = "2007 USB Serial";
     uc->usb_desc       = &desc_serial;
     device_class_set_props(dc, serial_properties);
 }
@@ -687,7 +687,7 @@ static void usb_braille_class_initfn(ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
     USBDeviceClass *uc = USB_DEVICE_CLASS(klass);
 
-    uc->product_desc   = "CECL USB Braille";
+    uc->product_desc   = "2007 USB Braille";
     uc->usb_desc       = &desc_braille;
     device_class_set_props(dc, braille_properties);
 }

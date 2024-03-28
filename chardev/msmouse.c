@@ -150,7 +150,7 @@ static void char_msmouse_finalize(Object *obj)
 }
 
 static QemuInputHandler msmouse_handler = {
-    .name  = "CECL Microsoft Mouse",
+    .name  = "2007 Microsoft Mouse",
     .mask  = INPUT_EVENT_MASK_BTN | INPUT_EVENT_MASK_REL,
     .event = msmouse_input_event,
     .sync  = msmouse_input_sync,
