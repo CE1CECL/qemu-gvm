@@ -496,8 +496,6 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     const desc_param *param;
     uint32_t verb, payload, response, count, shift;
 
-	uint32_t pwrst = 0x0;
-
     dprint(a, 2, "%s: data: 0x%x\n",
            __func__, data);
 
@@ -512,7 +510,6 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
            __func__, nid, node->name, verb, payload);
 
     switch (verb) {
-    /* all nodes */
     case AC_VERB_PARAMETERS:
         param = hda_codec_find_param(node, payload);
         if (param == NULL) {
@@ -520,11 +517,11 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         }
         hda_codec_response(hda, true, param->val);
         break;
+
     case AC_VERB_GET_SUBSYSTEM_ID:
         hda_codec_response(hda, true, 0x106b3800);
         break;
 
-    /* all functions */
     case AC_VERB_GET_CONNECT_LIST:
         param = hda_codec_find_param(node, AC_PAR_CONNLIST_LEN);
         count = param ? param->val : 0;
@@ -538,78 +535,11 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         hda_codec_response(hda, true, response);
         break;
 
-    /* pin widget */
     case AC_VERB_GET_CONFIG_DEFAULT:
         hda_codec_response(hda, true, node->config);
         break;
     case AC_VERB_GET_PIN_WIDGET_CONTROL:
         hda_codec_response(hda, true, node->pinctl);
-        break;
-    case AC_VERB_SET_PIN_WIDGET_CONTROL:
-        if (node->pinctl != payload) {
-            dprint(a, 1, "unhandled pin control bit (%u != %u)\n", node->pinctl, payload);
-        }
-        hda_codec_response(hda, true, 0);
-        break;
-
-    /* audio in/out widget */
-    case AC_VERB_SET_CHANNEL_STREAMID:
-        st = a->st + node->stindex;
-        if (st->node == NULL) {
-            goto fail;
-        }
-        hda_audio_set_running(st, false);
-        st->stream = (payload >> 4) & 0x0f;
-        st->channel = payload & 0x0f;
-        dprint(a, 2, "%s: stream %d, channel %d\n",
-               st->node->name, st->stream, st->channel);
-        hda_audio_set_running(st, a->running_real[st->output * 16 + st->stream]);
-        hda_codec_response(hda, true, 0);
-        break;
-    case AC_VERB_GET_CONV:
-        st = a->st + node->stindex;
-        if (st->node == NULL) {
-            goto fail;
-        }
-        response = st->stream << 4 | st->channel;
-        hda_codec_response(hda, true, response);
-        break;
-    case AC_VERB_SET_STREAM_FORMAT:
-        st = a->st + node->stindex;
-        if (st->node == NULL) {
-            goto fail;
-        }
-        st->format = payload;
-        hda_codec_parse_fmt(st->format, &st->as);
-        hda_audio_setup(st);
-        hda_codec_response(hda, true, 0);
-        break;
-
-    case AC_VERB_SET_POWER_STATE:
-	if (payload == 0x0) {
-		pwrst = 0x0;
-	} else if (payload == 0x1) {
-		pwrst = 0x11;
-	} else if (payload == 0x2) {
-		pwrst = 0x2;
-	} else if (payload == 0x3) {
-		pwrst = 0x233;
-	} else {
-		pwrst = 0x0;
-	}
-        hda_codec_response(hda, true, 0);
-        break;
-
-    case AC_VERB_GET_POWER_STATE:
-        hda_codec_response(hda, true, pwrst);
-        break;
-
-    case AC_VERB_GET_STREAM_FORMAT:
-        st = a->st + node->stindex;
-        if (st->node == NULL) {
-            goto fail;
-        }
-        hda_codec_response(hda, true, st->format);
         break;
 
 //    case AC_VERB_GET_AMP_GAIN_MUTE:
@@ -1161,10 +1091,6 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         }
         hda_audio_set_amp(st);
         hda_codec_response(hda, true, 0);
-        break;
-
-    case AC_VERB_GET_VOLUME_KNOB_CONTROL:
-        hda_codec_response(hda, true, 63);
         break;
 
     default:
