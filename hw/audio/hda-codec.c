@@ -499,15 +499,15 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     dprint(a, 2, "%s: data: 0x%x\n",
            __func__, data);
 
-    if (data & 0xf0900) {
-        dprint(a, 2, "4/16 id/payload 0\n");
-        verb = (data >> 8) & 0xf00;
-        payload = data & 0xffff;
-    } else {
-        dprint(a, 2, "12/8 id/payload 0\n");
+//    if (data & 0xf0900) {
+//        dprint(a, 2, "4/16 id/payload\n");
+//        verb = (data >> 8) & 0xf00;
+//        payload = data & 0xffff;
+//    } else {
+//        dprint(a, 2, "12/8 id/payload\n");
         verb = (data >> 8) & 0xfff;
         payload = data & 0x00ff;
-    }
+//    }
 
     node = hda_codec_find_node(a->desc, nid);
     if (node == NULL) {
