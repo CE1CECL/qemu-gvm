@@ -499,8 +499,15 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     dprint(a, 2, "%s: data: 0x%x\n",
            __func__, data);
 
+    if (data & 0xf0900) {
+        dprint(a, 2, "4/16 id/payload 0\n");
+        verb = (data >> 8) & 0xf00;
+        payload = data & 0xffff;
+    } else {
+        dprint(a, 2, "12/8 id/payload 0\n");
         verb = (data >> 8) & 0xfff;
         payload = data & 0x00ff;
+    }
 
     node = hda_codec_find_node(a->desc, nid);
     if (node == NULL) {
@@ -538,8 +545,51 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     case AC_VERB_GET_CONFIG_DEFAULT:
         hda_codec_response(hda, true, node->config);
         break;
+
     case AC_VERB_GET_PIN_WIDGET_CONTROL:
         hda_codec_response(hda, true, node->pinctl);
+        break;
+
+    case AC_VERB_SET_CHANNEL_STREAMID:
+        st = a->st + node->stindex;
+        if (st->node == NULL) {
+            goto fail;
+        }
+        hda_audio_set_running(st, false);
+        st->stream = (payload >> 4) & 0x0f;
+        st->channel = payload & 0x0f;
+        dprint(a, 2, "%s: stream %d, channel %d\n",
+               st->node->name, st->stream, st->channel);
+        hda_audio_set_running(st, a->running_real[st->output * 16 + st->stream]);
+        hda_codec_response(hda, true, 0);
+        break;
+
+    case AC_VERB_GET_CONV:
+        st = a->st + node->stindex;
+        if (st->node == NULL) {
+            goto fail;
+        }
+        response = st->stream << 4 | st->channel;
+        hda_codec_response(hda, true, response);
+        break;
+
+    case AC_VERB_SET_STREAM_FORMAT:
+        st = a->st + node->stindex;
+        if (st->node == NULL) {
+            goto fail;
+        }
+        st->format = payload;
+        hda_codec_parse_fmt(st->format, &st->as);
+        hda_audio_setup(st);
+        hda_codec_response(hda, true, 0);
+        break;
+
+    case AC_VERB_GET_STREAM_FORMAT:
+        st = a->st + node->stindex;
+        if (st->node == NULL) {
+            goto fail;
+        }
+        hda_codec_response(hda, true, st->format);
         break;
 
 //    case AC_VERB_GET_AMP_GAIN_MUTE:
