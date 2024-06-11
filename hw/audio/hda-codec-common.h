@@ -58,7 +58,7 @@ static const desc_param glue(paramaters_two_, PARAM)[] = {
         .val = 0x01,
     },{
         .id  = 0x0a,
-        .val = 0x0e0560,
+        .val = 0x020040,
     },
 };
 
@@ -74,7 +74,7 @@ static const desc_param glue(paramaters_three_, PARAM)[] = {
         .val = 0x01,
     },{
         .id  = 0x0a,
-        .val = 0x0e0560,
+        .val = 0x020040,
     },
 };
 
@@ -90,7 +90,7 @@ static const desc_param glue(paramaters_four_, PARAM)[] = {
         .val = 0x01,
     },{
         .id  = 0x0a,
-        .val = 0x0e0560,
+        .val = 0x020040,
     },
 };
 
@@ -106,7 +106,7 @@ static const desc_param glue(paramaters_five_, PARAM)[] = {
         .val = 0x01,
     },{
         .id  = 0x0a,
-        .val = 0x0e0560,
+        .val = 0x020040,
     },
 };
 
@@ -122,7 +122,7 @@ static const desc_param glue(paramaters_six_, PARAM)[] = {
         .val = 0x01,
     },{
         .id  = 0x0a,
-        .val = 0x1e05e0,
+        .val = 0x020040,
     },
 };
 
@@ -144,7 +144,7 @@ static const desc_param glue(paramaters_seven_, PARAM)[] = {
         .val = 0x01,
     },{
         .id  = 0x0a,
-        .val = 0x0e0560,
+        .val = 0x020040,
     },
 };
 
@@ -166,7 +166,7 @@ static const desc_param glue(paramaters_eight_, PARAM)[] = {
         .val = 0x01,
     },{
         .id  = 0x0a,
-        .val = 0x0e0560,
+        .val = 0x020040,
     },
 };
 
@@ -188,7 +188,7 @@ static const desc_param glue(paramaters_nine_, PARAM)[] = {
         .val = 0x01,
     },{
         .id  = 0x0a,
-        .val = 0x0e0560,
+        .val = 0x020040,
     },
 };
 
@@ -408,7 +408,7 @@ static const desc_param glue(paramaters_twenty_five_, PARAM)[] = {
         .val = 0x01,
     },{
         .id  = 0x0a,
-        .val = 0x0e0560,
+        .val = 0x020040,
     },
 };
 
@@ -440,7 +440,7 @@ static const desc_param glue(paramaters_a_, PARAM)[] = {
         .val = 0x01,
     },{
         .id  = 0x0a,
-        .val = 0x1e0560,
+        .val = 0x020040,
     },
 };
 

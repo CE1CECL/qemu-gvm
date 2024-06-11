@@ -78,7 +78,7 @@ static const desc_node* hda_codec_find_node(const desc_codec *codec, uint32_t ni
 
 static void hda_codec_parse_fmt(uint32_t format, struct audsettings *as)
 {
-    as->freq = (format & AC_FMT_BASE_48K) ? 44100 : 48000;
+    as->freq = (format & AC_FMT_BASE_44K) ? 44100 : 48000;
 
     switch ((format & AC_FMT_MULT_MASK) >> AC_FMT_MULT_SHIFT) {
     case 1: as->freq *= 2; break;
@@ -112,7 +112,6 @@ static void hda_codec_parse_fmt(uint32_t format, struct audsettings *as)
 
 /* some defines */
 
-#define QEMU_HDA_PCM_FORMATS (AC_SUPPCM_BITS_16 | 0x1fc)
 #define QEMU_HDA_AMP_NONE    (0)
 #define QEMU_HDA_AMP_STEPS   0x4a
 
@@ -144,7 +143,7 @@ typedef struct HDAAudioStream HDAAudioStream;
 struct HDAAudioStream {
     HDAAudioState *state;
     const desc_node *node;
-    bool output, input, running;
+    bool output, running;
     uint32_t stream;
     uint32_t channel;
     uint32_t format;
@@ -422,7 +421,7 @@ static void hda_audio_set_running(HDAAudioStream *st, bool running)
     }
     if (st->output) {
         AUD_set_active_out(st->voice.out, st->running);
-    } else if (st->input) {
+    } else {
         AUD_set_active_in(st->voice.in, st->running);
     }
 }
@@ -448,7 +447,7 @@ static void hda_audio_set_amp(HDAAudioStream *st)
     }
     if (st->output) {
         AUD_set_volume_out(st->voice.out, muted, left, right);
-    } else if (st->input) {
+    } else {
         AUD_set_volume_in(st->voice.in, muted, left, right);
     }
 }
@@ -475,7 +474,7 @@ static void hda_audio_setup(HDAAudioStream *st)
         }
         st->voice.out = AUD_open_out(&st->state->card, st->voice.out,
                                      st->node->name, st, cb, &st->as);
-    } else if (st->input) {
+    } else {
         if (use_timer) {
             cb = hda_audio_input_cb;
             st->buft = timer_new_ns(QEMU_CLOCK_VIRTUAL,
@@ -494,7 +493,7 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     HDAAudioStream *st;
     const desc_node *node = NULL;
     const desc_param *param;
-    uint32_t verb, payload, response, count, shift;
+    uint32_t verb, brev, payload, daolyap, response; //, count, shift;
 
     dprint(a, 2, "%s: data: 0x%x\n",
            __func__, data);
@@ -507,14 +506,17 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
 //        dprint(a, 2, "12/8 id/payload\n");
         verb = (data >> 8) & 0xfff;
         payload = data & 0x00ff;
+
+        brev = (data >> 8) & 0xf00;
+        daolyap = data & 0xffff;
 //    }
 
     node = hda_codec_find_node(a->desc, nid);
     if (node == NULL) {
 	goto fail;
     }
-    dprint(a, 2, "%s: nid %d (%s), verb 0x%x, payload 0x%x\n",
-           __func__, nid, node->name, verb, payload);
+    dprint(a, 2, "%s: nid %d (%s), verb 0x%x, payload 0x%x, brev 0x%x, daolyap 0x%x\n",
+           __func__, nid, node->name, verb, payload, brev, daolyap);
 
     switch (verb) {
     case AC_VERB_PARAMETERS:
@@ -529,6 +531,7 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         hda_codec_response(hda, true, 0x106b3800);
         break;
 
+/*
     case AC_VERB_GET_CONNECT_LIST:
         param = hda_codec_find_param(node, AC_PAR_CONNLIST_LEN);
         count = param ? param->val : 0;
@@ -541,6 +544,7 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         }
         hda_codec_response(hda, true, response);
         break;
+*/
 
     case AC_VERB_GET_CONFIG_DEFAULT:
         hda_codec_response(hda, true, node->config);
@@ -558,8 +562,7 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         hda_audio_set_running(st, false);
         st->stream = (payload >> 4) & 0x0f;
         st->channel = payload & 0x0f;
-        dprint(a, 2, "%s: stream %d, channel %d\n",
-               st->node->name, st->stream, st->channel);
+        dprint(a, 2, "%s: stream %d, channel %d\n", st->node->name, st->stream, st->channel);
         hda_audio_set_running(st, a->running_real[st->output * 16 + st->stream]);
         hda_codec_response(hda, true, 0);
         break;
@@ -853,7 +856,7 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         if (st->node == NULL) {
             goto fail;
         }
-        if (payload & AC_AMP_GET_LEFT) {
+        if (daolyap & AC_AMP_GET_LEFT) {
             response = st->gain_left | (st->mute_left ? AC_AMP_MUTE : 0);
         } else {
             response = st->gain_right | (st->mute_right ? AC_AMP_MUTE : 0);
@@ -1124,30 +1127,59 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         }
         dprint(a, 1, "amp (%s): %s%s%s%s index %d  gain %3d %s\n",
                st->node->name,
-               (payload & AC_AMP_SET_OUTPUT) ? "o" : "-",
-               (payload & AC_AMP_SET_INPUT)  ? "i" : "-",
-               (payload & AC_AMP_SET_LEFT)   ? "l" : "-",
-               (payload & AC_AMP_SET_RIGHT)  ? "r" : "-",
-               (payload & AC_AMP_SET_INDEX) >> AC_AMP_SET_INDEX_SHIFT,
-               (payload & AC_AMP_GAIN),
-               (payload & AC_AMP_MUTE) ? "muted" : "");
-        if (payload & AC_AMP_SET_LEFT) {
-            st->gain_left = payload & AC_AMP_GAIN;
-            st->mute_left = payload & AC_AMP_MUTE;
+               (daolyap & AC_AMP_SET_OUTPUT) ? "o" : "-",
+               (daolyap & AC_AMP_SET_INPUT)  ? "i" : "-",
+               (daolyap & AC_AMP_SET_LEFT)   ? "l" : "-",
+               (daolyap & AC_AMP_SET_RIGHT)  ? "r" : "-",
+               (daolyap & AC_AMP_SET_INDEX) >> AC_AMP_SET_INDEX_SHIFT,
+               (daolyap & AC_AMP_GAIN),
+               (daolyap & AC_AMP_MUTE) ? "muted" : "");
+        if (daolyap & AC_AMP_SET_LEFT) {
+            st->gain_left = daolyap & AC_AMP_GAIN;
+            st->mute_left = daolyap & AC_AMP_MUTE;
         }
-        if (payload & AC_AMP_SET_RIGHT) {
-            st->gain_right = payload & AC_AMP_GAIN;
-            st->mute_right = payload & AC_AMP_MUTE;
+        if (daolyap & AC_AMP_SET_RIGHT) {
+            st->gain_right = daolyap & AC_AMP_GAIN;
+            st->mute_right = daolyap & AC_AMP_MUTE;
         }
         hda_audio_set_amp(st);
         hda_codec_response(hda, true, 0);
         break;
 
     default:
+if (nid == 0x15 && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x0f0e0d0c);break;};
+if (nid == 0x15 && verb == 0x0f02 && payload == 0x04) {hda_codec_response(hda, true, 0x26);break;};
+if (nid == 0x0c && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x0b02);break;};
+if (nid == 0x0b && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x1b1a1918);break;};
+if (nid == 0x0b && verb == 0x0f02 && payload == 0x04) {hda_codec_response(hda, true, 0x15141d1c);break;};
+if (nid == 0x0b && verb == 0x0f02 && payload == 0x08) {hda_codec_response(hda, true, 0x1716);break;};
+if (nid == 0x0d && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x0b03);break;};
+if (nid == 0x14 && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x0f0e0d0c);break;};
+if (nid == 0x14 && verb == 0x0f02 && payload == 0x04) {hda_codec_response(hda, true, 0x26);break;};
+if (nid == 0x0e && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x0b04);break;};
+if (nid == 0x0f && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x0b05);break;};
+if (nid == 0x26 && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x0b25);break;};
+if (nid == 0x07 && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x24);break;};
+if (nid == 0x24 && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x1b1a1918);break;};
+if (nid == 0x24 && verb == 0x0f02 && payload == 0x04) {hda_codec_response(hda, true, 0x15141d1c);break;};
+if (nid == 0x24 && verb == 0x0f02 && payload == 0x08) {hda_codec_response(hda, true, 0x0b1716);break;};
+if (nid == 0x08 && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x23);break;};
+if (nid == 0x23 && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x1b1a1918);break;};
+if (nid == 0x23 && verb == 0x0f02 && payload == 0x04) {hda_codec_response(hda, true, 0x15141d1c);break;};
+if (nid == 0x23 && verb == 0x0f02 && payload == 0x08) {hda_codec_response(hda, true, 0x0b1716);break;};
+if (nid == 0x09 && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x22);break;};
+if (nid == 0x22 && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x1b1a1918);break;};
+if (nid == 0x22 && verb == 0x0f02 && payload == 0x04) {hda_codec_response(hda, true, 0x15141d1c);break;};
+if (nid == 0x22 && verb == 0x0f02 && payload == 0x08) {hda_codec_response(hda, true, 0x0b1716);break;};
+if (nid == 0x1e && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x06);break;};
+if (nid == 0x0a && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x1f);break;};
+if (nid == 0x18 && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x0f0e0d0c);break;};
+if (nid == 0x18 && verb == 0x0f02 && payload == 0x04) {hda_codec_response(hda, true, 0x26);break;};
+if (nid == 0x1a && verb == 0x0f02 && payload == 0x00) {hda_codec_response(hda, true, 0x0f0e0d0c);break;};
+if (nid == 0x1a && verb == 0x0f02 && payload == 0x04) {hda_codec_response(hda, true, 0x26);break;};
         dprint(a, 1, "%s: not handled: nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, nid, node ? node->name : "?", verb, payload);
         hda_codec_response(hda, true, 0);
         break;
-//        goto fail;
     }
     return;
 
@@ -1212,15 +1244,10 @@ static int hda_audio_init(HDACodecDevice *hda, const struct desc_codec *desc)
                 st->gain_right = QEMU_HDA_AMP_STEPS;
                 st->compat_bpos = sizeof(st->compat_buf);
                 st->output = true;
-                st->input = false;
-            } else if (type == AC_WID_AUD_IN) {
-                st->input = true;
-                st->output = false;
             } else {
                 st->output = false;
-                st->input = false;
             }
-            st->format = 0xe0560;
+            st->format = 0x020040;
             hda_codec_parse_fmt(st->format, &st->as);
             hda_audio_setup(st);
             break;
@@ -1246,7 +1273,7 @@ static void hda_audio_exit(HDACodecDevice *hda)
         }
         if (st->output) {
             AUD_close_out(&a->card, st->voice.out);
-        } else if (st->input) {
+        } else {
             AUD_close_in(&a->card, st->voice.in);
         }
     }
@@ -1350,7 +1377,7 @@ static const VMStateDescription vmstate_hda_audio = {
 
 static Property hda_audio_properties[] = {
     DEFINE_AUDIO_PROPERTIES(HDAAudioState, card),
-    DEFINE_PROP_UINT32("debug", HDAAudioState, debug,   9999999999),
+    DEFINE_PROP_UINT32("debug", HDAAudioState, debug, 0),
     DEFINE_PROP_BOOL("mixer", HDAAudioState, mixer,  true),
     DEFINE_PROP_BOOL("use-timer", HDAAudioState, use_timer,  true),
     DEFINE_PROP_END_OF_LIST(),
