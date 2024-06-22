@@ -112,16 +112,9 @@ static void hda_codec_parse_fmt(uint32_t format, struct audsettings *as)
 
 /* some defines */
 
-#define QEMU_HDA_AMP_NONE    (0)
-#define QEMU_HDA_AMP_STEPS   0x4a
-
 #define   PARAM mixemu
 #define   HDA_MIXER
 #include "hda-codec-common.h"
-
-#define   PARAM nomixemu
-#include  "hda-codec-common.h"
-
 #define HDA_TIMER_TICKS (SCALE_MS)
 #define B_SIZE sizeof(st->buf)
 #define B_MASK (sizeof(st->buf) - 1)
@@ -439,12 +432,9 @@ static void hda_audio_set_amp(HDAAudioStream *st)
     left  = st->mute_left  ? 0 : st->gain_left;
     right = st->mute_right ? 0 : st->gain_right;
 
-    left = left * 255 / QEMU_HDA_AMP_STEPS;
-    right = right * 255 / QEMU_HDA_AMP_STEPS;
+    left = left * 255 / 74;
+    right = right * 255 / 74;
 
-    if (!st->state->mixer) {
-        return;
-    }
     if (st->output) {
         AUD_set_volume_out(st->voice.out, muted, left, right);
     } else {
@@ -495,34 +485,28 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     const desc_param *param;
     uint32_t verb, brev, payload, daolyap, response; //, count, shift;
 
-    dprint(a, 2, "%s: data: 0x%x\n",
-           __func__, data);
+    dprint(a, 2, "%s: data: 0x%x\n", __func__, data);
 
-//    if (data & 0xf0900) {
-//        dprint(a, 2, "4/16 id/payload\n");
-//        verb = (data >> 8) & 0xf00;
-//        payload = data & 0xffff;
-//    } else {
-//        dprint(a, 2, "12/8 id/payload\n");
         verb = (data >> 8) & 0xfff;
         payload = data & 0x00ff;
 
         brev = (data >> 8) & 0xf00;
         daolyap = data & 0xffff;
-//    }
 
     node = hda_codec_find_node(a->desc, nid);
     if (node == NULL) {
 	goto fail;
     }
-    dprint(a, 2, "%s: nid %d (%s), verb 0x%x, payload 0x%x, brev 0x%x, daolyap 0x%x\n",
-           __func__, nid, node->name, verb, payload, brev, daolyap);
+    dprint(a, 2, "%s: nid %d (%s), verb 0x%x, payload 0x%x, brev 0x%x, daolyap 0x%x\n", __func__, nid, node->name, verb, payload, brev, daolyap);
 
     switch (verb) {
     case AC_VERB_PARAMETERS:
         param = hda_codec_find_param(node, payload);
         if (param == NULL) {
-            goto fail;
+            param = hda_codec_find_param(node, daolyap);
+            if (param == NULL) {
+                goto fail;
+            }
         }
         hda_codec_response(hda, true, param->val);
         break;
@@ -530,21 +514,6 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     case AC_VERB_GET_SUBSYSTEM_ID:
         hda_codec_response(hda, true, 0x106b3800);
         break;
-
-/*
-    case AC_VERB_GET_CONNECT_LIST:
-        param = hda_codec_find_param(node, AC_PAR_CONNLIST_LEN);
-        count = param ? param->val : 0;
-        response = 0;
-        shift = 0;
-        while (payload < count && shift < 32) {
-            response |= node->conn[payload] << shift;
-            payload++;
-            shift += 8;
-        }
-        hda_codec_response(hda, true, response);
-        break;
-*/
 
     case AC_VERB_GET_CONFIG_DEFAULT:
         hda_codec_response(hda, true, node->config);
@@ -1125,8 +1094,7 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         if (st->node == NULL) {
             goto fail;
         }
-        dprint(a, 1, "amp (%s): %s%s%s%s index %d  gain %3d %s\n",
-               st->node->name,
+        dprint(a, 1, "amp (%s): %s%s%s%s index %d  gain %3d %s\n", st->node->name,
                (daolyap & AC_AMP_SET_OUTPUT) ? "o" : "-",
                (daolyap & AC_AMP_SET_INPUT)  ? "i" : "-",
                (daolyap & AC_AMP_SET_LEFT)   ? "l" : "-",
@@ -1184,10 +1152,8 @@ if (nid == 0x1a && verb == 0x0f02 && payload == 0x04) {hda_codec_response(hda, t
     return;
 
 fail:
-    dprint(a, 1, "%s: not handled: nid %d (%s), verb 0x%x, payload 0x%x\n",
-           __func__, nid, node ? node->name : "?", verb, payload);
+    dprint(a, 1, "%s: not handled: nid %d (%s), verb 0x%x, payload 0x%x\n",__func__, nid, node ? node->name : "?", verb, payload);
     hda_codec_response(hda, true, 0);
-
 }
 
 static void hda_audio_stream(HDACodecDevice *hda, uint32_t stnr, bool running, bool output)
@@ -1239,17 +1205,11 @@ static int hda_audio_init(HDACodecDevice *hda, const struct desc_codec *desc)
             st->state = a;
             st->node = node;
             if (type == AC_WID_AUD_OUT) {
-                /* unmute output by default */
-                st->gain_left = QEMU_HDA_AMP_STEPS;
-                st->gain_right = QEMU_HDA_AMP_STEPS;
                 st->compat_bpos = sizeof(st->compat_buf);
                 st->output = true;
             } else {
                 st->output = false;
             }
-            st->format = 0x020040;
-            hda_codec_parse_fmt(st->format, &st->as);
-            hda_audio_setup(st);
             break;
         }
     }
@@ -1297,10 +1257,6 @@ static int hda_audio_post_load(void *opaque, int version)
         st = a->st + i;
         if (st->node == NULL)
             continue;
-        hda_codec_parse_fmt(st->format, &st->as);
-        hda_audio_setup(st);
-        hda_audio_set_amp(st);
-        hda_audio_set_running(st, a->running_real[st->output * 16 + st->stream]);
     }
     return 0;
 }
@@ -1378,8 +1334,8 @@ static const VMStateDescription vmstate_hda_audio = {
 static Property hda_audio_properties[] = {
     DEFINE_AUDIO_PROPERTIES(HDAAudioState, card),
     DEFINE_PROP_UINT32("debug", HDAAudioState, debug, 0),
-    DEFINE_PROP_BOOL("mixer", HDAAudioState, mixer,  true),
-    DEFINE_PROP_BOOL("use-timer", HDAAudioState, use_timer,  true),
+    DEFINE_PROP_BOOL("mixer", HDAAudioState, mixer, true),
+    DEFINE_PROP_BOOL("use-timer", HDAAudioState, use_timer, true),
     DEFINE_PROP_END_OF_LIST(),
 };
 
@@ -1388,7 +1344,7 @@ static int hda_audio_init_output(HDACodecDevice *hda)
     HDAAudioState *a = HDA_AUDIO(hda);
 
     if (!a->mixer) {
-        return hda_audio_init(hda, &output_nomixemu);
+        return hda_audio_init(hda, &output_mixemu);
     } else {
         return hda_audio_init(hda, &output_mixemu);
     }
@@ -1399,7 +1355,7 @@ static int hda_audio_init_duplex(HDACodecDevice *hda)
     HDAAudioState *a = HDA_AUDIO(hda);
 
     if (!a->mixer) {
-        return hda_audio_init(hda, &duplex_nomixemu);
+        return hda_audio_init(hda, &duplex_mixemu);
     } else {
         return hda_audio_init(hda, &duplex_mixemu);
     }
@@ -1410,7 +1366,7 @@ static int hda_audio_init_micro(HDACodecDevice *hda)
     HDAAudioState *a = HDA_AUDIO(hda);
 
     if (!a->mixer) {
-        return hda_audio_init(hda, &micro_nomixemu);
+        return hda_audio_init(hda, &micro_mixemu);
     } else {
         return hda_audio_init(hda, &micro_mixemu);
     }
