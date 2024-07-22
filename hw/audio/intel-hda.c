@@ -1,20 +1,20 @@
-/*
- * Copyright (C) 2010 Red Hat, Inc.
- *
- * written by Gerd Hoffmann <kraxel@redhat.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 or
- * (at your option) version 3 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses/>.
+ /*
+   QEMU Realtek ALC885/ALC889A
+   
+   Copyright (c) 2023-2024 Christopher Eric Lentocha <christopherericlentocha@gmail.com>
+   
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 or
+   (at your option) version 3 of the License.
+   
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "qemu/osdep.h"
@@ -943,13 +943,13 @@ static void intel_hda_reg_write(IntelHDAState *d, const IntelHDAReg *reg, uint32
         if (d->last_write && d->last_reg == reg && d->last_val == val) {
             d->repeat_count++;
             if (d->last_sec != now) {
-                dprint(d, 2, "intel_hda_reg_write: a: previous register op repeated %d times ((%d) / (%d == %d))\n", d->repeat_count, d->last_write, d->last_val, val);
+                dprint(d, 2, "previous register op repeated %d times\n", d->repeat_count);
                 d->last_sec = now;
                 d->repeat_count = 0;
             }
         } else {
             if (d->repeat_count) {
-                dprint(d, 2, "intel_hda_reg_write: b: previous register op repeated %d times\n", d->repeat_count);
+                dprint(d, 2, "previous register op repeated %d times\n", d->repeat_count);
             }
             dprint(d, 2, "write %-16s: 0x%x (%x)\n", reg->name, val, wmask);
             d->last_write = 1;
@@ -1007,13 +1007,13 @@ static uint32_t intel_hda_reg_read(IntelHDAState *d, const IntelHDAReg *reg,
         if (!d->last_write && d->last_reg == reg && d->last_val == ret) {
             d->repeat_count++;
             if (d->last_sec != now) {
-                dprint(d, 2, "intel_hda_reg_read: c: previous register op repeated %d times ((%d) / (%d == %d))\n", d->repeat_count, d->last_write, d->last_val, ret);
+                dprint(d, 2, "previous register op repeated %d times\n", d->repeat_count);
                 d->last_sec = now;
                 d->repeat_count = 0;
             }
         } else {
             if (d->repeat_count) {
-                dprint(d, 2, "intel_hda_reg_read: d: previous register op repeated %d times\n", d->repeat_count);
+                dprint(d, 2, "previous register op repeated %d times\n", d->repeat_count);
             }
             dprint(d, 2, "read  %-16s: 0x%x (%x)\n", reg->name, ret, rmask);
             d->last_write = 0;
@@ -1235,10 +1235,10 @@ static void intel_hda_class_init(ObjectClass *klass, void *data)
 
     k->realize = intel_hda_realize;
     k->exit = intel_hda_exit;
-    k->vendor_id = 0x8086; //PCI_VENDOR_ID_INTEL;
-    k->class_id = 0x0403; //PCI_CLASS_MULTIMEDIA_HD_AUDIO;
+    k->vendor_id = 0x8086;
+    k->class_id = 0x0403;
     k->device_id = 0x284b;
-    k->revision = 04;
+    k->revision = 0x04;
     k->subsystem_vendor_id = 0x106b;
     k->subsystem_id = 0x00a3;
     dc->reset = intel_hda_reset;
@@ -1249,10 +1249,6 @@ static void intel_hda_class_init(ObjectClass *klass, void *data)
 static void intel_hda_class_init_ich6(ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
-//    PCIDeviceClass *k = PCI_DEVICE_CLASS(klass);
-
-//    k->device_id = 0x2668;
-//    k->revision = 1;
     set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
     dc->desc = "Intel HD Audio Controller (ich6)";
 }
@@ -1260,10 +1256,6 @@ static void intel_hda_class_init_ich6(ObjectClass *klass, void *data)
 static void intel_hda_class_init_ich9(ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
-//    PCIDeviceClass *k = PCI_DEVICE_CLASS(klass);
-
-//    k->device_id = 0x293e;
-//    k->revision = 3;
     set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
     dc->desc = "Intel HD Audio Controller (ich9)";
 }
