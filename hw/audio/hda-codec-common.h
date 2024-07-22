@@ -275,58 +275,49 @@ static const desc_param glue(paramaters_fifteen_, PARAM)[] = {
 
 static const desc_param glue(paramaters_sixteen_, PARAM)[] = {
     {
-        .id  = 0x05,
-        .val = 0x00,
+        .id  = 0x5,
+        .val = 0x0,
     },{
-        .id  = 0x09,
-        .val = 0x40018f,
-    },{
-        .id  = 0x0c,
+        .id  = 0xc,
         .val = 0x3c,
     },
 };
 
 static const desc_param glue(paramaters_seventeen_, PARAM)[] = {
     {
-        .id  = 0x05,
-        .val = 0x00,
+        .id  = 0x5,
+        .val = 0x0,
     },{
-        .id  = 0x09,
-        .val = 0x40018f,
-    },{
-        .id  = 0x0c,
+        .id  = 0xc,
         .val = 0x3c,
     },
 };
 
 static const desc_param glue(paramaters_eighteen_, PARAM)[] = {
     {
-        .id  = 0x05,
-        .val = 0x00,
+        .id  = 0x5,
+        .val = 0x0,
     },{
-        .id  = 0x09,
+        .id  = 0x9,
         .val = 0x40018f,
     },{
-        .id  = 0x0c,
+        .id  = 0xc,
         .val = 0x373c,
     },{
-        .id  = 0x0d,
+        .id  = 0xd,
         .val = 0x270300,
     },{
-        .id  = 0x0e,
-        .val = 0x05,
+        .id  = 0xe,
+        .val = 0x5,
     },
 };
 
 static const desc_param glue(paramaters_nineteen_, PARAM)[] = {
     {
-        .id  = 0x05,
-        .val = 0x00,
+        .id  = 0x5,
+        .val = 0x0,
     },{
-        .id  = 0x09,
-        .val = 0x40018f,
-    },{
-        .id  = 0x0c,
+        .id  = 0xc,
         .val = 0x373c,
     },
 };
@@ -554,13 +545,10 @@ static const desc_param glue(paramaters_one_a_, PARAM)[] = {
 
 static const desc_param glue(paramaters_one_b_, PARAM)[] = {
     {
-        .id  = 0x05,
-        .val = 0x00,
+        .id  = 0x5,
+        .val = 0x0,
     },{
-        .id  = 0x09,
-        .val = 0x40018f,
-    },{
-        .id  = 0x0c,
+        .id  = 0xc,
         .val = 0x373c,
     },
 };
@@ -751,6 +739,20 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .config  = 0x12b4050,
         .pinctl  = 0xc4,
     },{
+        .nid     = 0x16,
+        .name    = "sixteen",
+        .params  = glue(paramaters_sixteen_, PARAM),
+        .nparams = ARRAY_SIZE(glue(paramaters_sixteen_, PARAM)),
+        .config  = 0x400000f0,
+        .pinctl  = 0x20,
+    },{
+        .nid     = 0x17,
+        .name    = "seventeen",
+        .params  = glue(paramaters_seventeen_, PARAM),
+        .nparams = ARRAY_SIZE(glue(paramaters_seventeen_, PARAM)),
+        .config  = 0x400000f0,
+        .pinctl  = 0x20,
+    },{
         .nid     = 0x18,
         .name    = "eighteen",
         .params  = glue(paramaters_eighteen_, PARAM),
@@ -759,12 +761,26 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .config  = 0x90a00110,
         .pinctl  = 0x24,
     },{
+        .nid     = 0x19,
+        .name    = "nineteen",
+        .params  = glue(paramaters_nineteen_, PARAM),
+        .nparams = ARRAY_SIZE(glue(paramaters_nineteen_, PARAM)),
+        .config  = 0x400000f0,
+        .pinctl  = 0x24,
+    },{
         .nid     = 0x1a,
         .name    = "one_a",
         .params  = glue(paramaters_one_a_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_one_a_, PARAM)),
         .conn    = (uint32_t[]) { 0xf0e0d0c },
         .config  = 0x18b3020,
+        .pinctl  = 0x20,
+    },{
+        .nid     = 0x1b,
+        .name    = "one_b",
+        .params  = glue(paramaters_one_b_, PARAM),
+        .nparams = ARRAY_SIZE(glue(paramaters_one_b_, PARAM)),
+        .config  = 0x400000f0,
         .pinctl  = 0x20,
     },{
         .nid     = 0x1c,
