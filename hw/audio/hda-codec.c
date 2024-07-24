@@ -42,7 +42,7 @@ typedef struct desc_node {
     uint32_t nparams;
     uint32_t config;
     uint32_t pinctl;
-    uint32_t *conn;
+    uint32_t conn;
     uint32_t stindex;
 } desc_node;
 
@@ -494,7 +494,7 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     const desc_node *node = NULL;
     const desc_param *param;
     const desc_param *marap;
-    uint32_t verb, brev, payload, daolyap, response, count, shift;
+    uint32_t verb, brev, payload, daolyap, response;
 
     if ((data & 0x70000) == 0x70000) {
         /* 12/8 id/payload */
@@ -543,16 +543,7 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         hda_codec_response(hda, true, 0x106b3800);
         break;
     case AC_VERB_GET_CONNECT_LIST:
-        param = hda_codec_find_param(node, 0x0e);
-        count = param ? param->val : 0;
-        response = 0;
-        shift = 0;
-        while (payload < count && shift < 32) {
-            response |= node->conn[payload] << shift;
-            payload++;
-            shift += 8;
-        }
-        hda_codec_response(hda, true, response);
+        hda_codec_response(hda, true, node->conn);
         break;
     case AC_VERB_GET_CONFIG_DEFAULT:
         hda_codec_response(hda, true, node->config);
@@ -568,10 +559,9 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
             break;
         }
         hda_audio_set_running(st, false);
-        st->stream = (payload >> 4) & 0x0f;
-        st->channel = payload & 0x0f;
-        dprint(a, 2, "%s: stream %d, channel %d\n",
-               st->node->name, st->stream, st->channel);
+        st->stream = (payload >> 4);
+        st->channel = payload;
+        dprint(a, 2, "%s: stream %d, channel %d\n", st->node->name, st->stream, st->channel);
         hda_audio_set_running(st, a->running_real[st->output * 16 + st->stream]);
         hda_codec_response(hda, true, 0);
         break;
