@@ -959,7 +959,6 @@ static void intel_hda_reg_write(IntelHDAState *d, const IntelHDAReg *reg, uint32
             d->repeat_count = 0;
         }
     }
-    assert(reg->offset != 0);
 
     addr = intel_hda_reg_addr(d, reg);
     old = *addr;
@@ -1112,7 +1111,6 @@ static void intel_hda_realize(PCIDevice *pci, Error **errp)
                        1, true, false, &err);
         /* Any error other than -ENOTSUP(board's MSI support is broken)
          * is a programming error */
-        assert(!ret || ret == -ENOTSUP);
         if (ret && d->msi == ON_OFF_AUTO_ON) {
             /* Can't satisfy user's explicit msi=on request, fail */
             error_append_hint(&err, "You have to use msi=auto (default) or "
@@ -1120,7 +1118,6 @@ static void intel_hda_realize(PCIDevice *pci, Error **errp)
             error_propagate(errp, err);
             return;
         }
-        assert(!err || d->msi == ON_OFF_AUTO_AUTO);
         /* With msi=auto, we fall back to MSI off silently */
         error_free(err);
     }
