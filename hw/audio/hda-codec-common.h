@@ -201,9 +201,6 @@ static const desc_param glue(paramaters_fourteen_, PARAM)[] = {
         .id  = 0x9,
         .val = 0x40018f,
     },{
-        .id  = 0xe,
-        .val = 0x5,
-    },{
         .id  = 0xc,
         .val = 0x373c,
     },{
@@ -217,9 +214,6 @@ static const desc_param glue(paramaters_fifteen_, PARAM)[] = {
         .id  = 0x9,
         .val = 0x40018f,
     },{
-        .id  = 0xe,
-        .val = 0x5,
-    },{
         .id  = 0xc,
         .val = 0x373c,
     },{
@@ -230,12 +224,6 @@ static const desc_param glue(paramaters_fifteen_, PARAM)[] = {
 
 static const desc_param glue(paramaters_sixteen_, PARAM)[] = {
     {
-        .id  = 0x9,
-        .val = 0x40018f,
-    },{
-        .id  = 0xe,
-        .val = 0x5,
-    },{
         .id  = 0xc,
         .val = 0x3c,
     },
@@ -243,12 +231,6 @@ static const desc_param glue(paramaters_sixteen_, PARAM)[] = {
 
 static const desc_param glue(paramaters_seventeen_, PARAM)[] = {
     {
-        .id  = 0x9,
-        .val = 0x40018f,
-    },{
-        .id  = 0xe,
-        .val = 0x5,
-    },{
         .id  = 0xc,
         .val = 0x3c,
     },
@@ -258,9 +240,6 @@ static const desc_param glue(paramaters_eighteen_, PARAM)[] = {
     {
         .id  = 0x9,
         .val = 0x40018f,
-    },{
-        .id  = 0xe,
-        .val = 0x5,
     },{
         .id  = 0xc,
         .val = 0x373c,
@@ -272,12 +251,6 @@ static const desc_param glue(paramaters_eighteen_, PARAM)[] = {
 
 static const desc_param glue(paramaters_nineteen_, PARAM)[] = {
     {
-        .id  = 0x9,
-        .val = 0x40018f,
-    },{
-        .id  = 0xe,
-        .val = 0x5,
-    },{
         .id  = 0xc,
         .val = 0x373c,
     },
@@ -445,9 +418,6 @@ static const desc_param glue(paramaters_one_a_, PARAM)[] = {
         .id  = 0x9,
         .val = 0x40018f,
     },{
-        .id  = 0xe,
-        .val = 0x5,
-    },{
         .id  = 0xc,
         .val = 0x373c,
     },{
@@ -458,12 +428,6 @@ static const desc_param glue(paramaters_one_a_, PARAM)[] = {
 
 static const desc_param glue(paramaters_one_b_, PARAM)[] = {
     {
-        .id  = 0x9,
-        .val = 0x40018f,
-    },{
-        .id  = 0xe,
-        .val = 0x5,
-    },{
         .id  = 0xc,
         .val = 0x373c,
     },
