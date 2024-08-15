@@ -479,11 +479,11 @@ static CPUCacheInfo legacy_l1i_cache_amd = {
 static CPUCacheInfo legacy_l2_cache = {
     .type = UNIFIED_CACHE,
     .level = 2,
-    .size = 4 * MiB,
+    .size = 3 * MiB,
     .self_init = 1,
     .line_size = 64,
     .associativity = 16,
-    .sets = 4096,
+    .sets = 3072,
     .partitions = 1,
     .no_invd_sharing = true,
 };
@@ -6488,19 +6488,6 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
         g_autofree char *name = x86_cpu_class_get_model_name(xcc);
         error_setg(&local_err, "CPU model '%s' requires KVM or HVF", name);
         goto out;
-    }
-
-    if (cpu->ucode_rev == 0) {
-        /*
-         * The default is the same as KVM's. Note that this check
-         * needs to happen after the evenual setting of ucode_rev in
-         * accel-specific code in cpu_exec_realizefn.
-         */
-        if (IS_AMD_CPU(env)) {
-            cpu->ucode_rev = 0x01000065;
-        } else {
-            cpu->ucode_rev = 0x100000000ULL;
-        }
     }
 
     /*
