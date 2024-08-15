@@ -20,35 +20,6 @@
 
 static bool kvm_cpu_realizefn(CPUState *cs, Error **errp)
 {
-    X86CPU *cpu = X86_CPU(cs);
-    CPUX86State *env = &cpu->env;
-
-    /*
-     * The realize order is important, since x86_cpu_realize() checks if
-     * nothing else has been set by the user (or by accelerators) in
-     * cpu->ucode_rev and cpu->phys_bits, and updates the CPUID results in
-     * mwait.ecx.
-     * This accel realization code also assumes cpu features are already expanded.
-     *
-     * realize order:
-     *
-     * x86_cpu_realize():
-     *  -> x86_cpu_expand_features()
-     *  -> cpu_exec_realizefn():
-     *            -> accel_cpu_realizefn()
-     *               kvm_cpu_realizefn() -> host_cpu_realizefn()
-     *  -> check/update ucode_rev, phys_bits, mwait
-     */
-    if (cpu->max_features) {
-        if (enable_cpu_pm && kvm_has_waitpkg()) {
-            env->features[FEAT_7_0_ECX] |= CPUID_7_0_ECX_WAITPKG;
-        }
-        if (cpu->ucode_rev == 0) {
-            cpu->ucode_rev =
-                kvm_arch_get_supported_msr_feature(kvm_state,
-                                                   MSR_IA32_UCODE_REV);
-        }
-    }
     return host_cpu_realizefn(cs, errp);
 }
 
