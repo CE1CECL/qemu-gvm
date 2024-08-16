@@ -1421,7 +1421,6 @@ static int hyperv_fill_cpuids(CPUState *cs,
 {
     X86CPU *cpu = X86_CPU(cs);
     struct kvm_cpuid_entry2 *c;
-    uint32_t signature[3];
     uint32_t cpuid_i = 0, max_cpuid_leaf = 0;
     uint32_t nested_eax =
         hv_build_cpuid_leaf(cs, HV_CPUID_NESTED_FEATURES, R_EAX);
@@ -1514,34 +1513,6 @@ static int hyperv_fill_cpuids(CPUState *cs,
         c->function = HV_CPUID_NESTED_FEATURES;
         c->eax = nested_eax;
     }
-
-    if (hyperv_feat_enabled(cpu, HYPERV_FEAT_SYNDBG)) {
-        c = &cpuid_ent[cpuid_i++];
-        c->function = HV_CPUID_SYNDBG_VENDOR_AND_MAX_FUNCTIONS;
-        c->eax = hyperv_feat_enabled(cpu, HYPERV_FEAT_EVMCS) ?
-            HV_CPUID_NESTED_FEATURES : HV_CPUID_IMPLEMENT_LIMITS;
-        memcpy(signature, "Microsoft VS", 12);
-        c->eax = 0;
-        c->ebx = signature[0];
-        c->ecx = signature[1];
-        c->edx = signature[2];
-
-        c = &cpuid_ent[cpuid_i++];
-        c->function = HV_CPUID_SYNDBG_INTERFACE;
-        memcpy(signature, "VS#1\0\0\0\0\0\0\0\0", 12);
-        c->eax = signature[0];
-        c->ebx = 0;
-        c->ecx = 0;
-        c->edx = 0;
-
-        c = &cpuid_ent[cpuid_i++];
-        c->function = HV_CPUID_SYNDBG_PLATFORM_CAPABILITIES;
-        c->eax = HV_SYNDBG_CAP_ALLOW_KERNEL_DEBUGGING;
-        c->ebx = 0;
-        c->ecx = 0;
-        c->edx = 0;
-    }
-
     return cpuid_i;
 }
 
@@ -1714,7 +1685,6 @@ int kvm_arch_init_vcpu(CPUState *cs)
     uint32_t limit, i, j, cpuid_i;
     uint32_t unused;
     struct kvm_cpuid_entry2 *c;
-    uint32_t signature[3];
     int kvm_base = KVM_CPUID_SIGNATURE;
     int max_nested_state_len;
     int r;
@@ -1770,22 +1740,6 @@ int kvm_arch_init_vcpu(CPUState *cs)
         kvm_base = KVM_CPUID_SIGNATURE_NEXT;
         has_msr_hv_hypercall = true;
     }
-
-    if (cpu->expose_kvm) {
-        memcpy(signature, "GenuineIntel", 12);
-        c = &cpuid_data.entries[cpuid_i++];
-        c->function = KVM_CPUID_SIGNATURE | kvm_base;
-        c->eax = KVM_CPUID_FEATURES | kvm_base;
-        c->ebx = signature[0];
-        c->ecx = signature[1];
-        c->edx = signature[2];
-
-        c = &cpuid_data.entries[cpuid_i++];
-        c->function = KVM_CPUID_FEATURES | kvm_base;
-        c->eax = env->features[FEAT_KVM];
-        c->edx = env->features[FEAT_KVM_HINTS];
-    }
-
     cpu_x86_cpuid(env, 0, 0, &limit, &unused, &unused, &unused);
 
     if (cpu->kvm_pv_enforce_cpuid) {
