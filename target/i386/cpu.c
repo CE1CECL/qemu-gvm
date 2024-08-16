@@ -5223,7 +5223,6 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
     CPUState *cs = env_cpu(env);
     uint32_t die_offset;
     uint32_t limit;
-    uint32_t signature[3];
     X86CPUTopoInfo topo_info;
 
     topo_info.dies_per_pkg = env->nr_dies;
@@ -5672,18 +5671,10 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
          * CPUID code in kvm_arch_init_vcpu() ignores stuff
          * set here, but we restrict to TCG none the less.
          */
-        if (tcg_enabled() && cpu->expose_tcg) {
-            memcpy(signature, "GenuineIntel", 12);
-            *eax = 0x40000001;
-            *ebx = signature[0];
-            *ecx = signature[1];
-            *edx = signature[2];
-        } else {
-            *eax = 0;
-            *ebx = 0;
-            *ecx = 0;
-            *edx = 0;
-        }
+        *eax = 0;
+        *ebx = 0;
+        *ecx = 0;
+        *edx = 0;
         break;
     case 0x40000001:
         *eax = 0;
@@ -6360,35 +6351,6 @@ static void x86_cpu_filter_features(X86CPU *cpu, bool verbose)
     }
 }
 
-static void x86_cpu_hyperv_realize(X86CPU *cpu)
-{
-    size_t len;
-
-    /* Hyper-V vendor id */
-    if (!cpu->hyperv_vendor) {
-        object_property_set_str(OBJECT(cpu), "hv-vendor-id", "Microsoft Hv",
-                                &error_abort);
-    }
-    len = strlen(cpu->hyperv_vendor);
-    if (len > 12) {
-        warn_report("hv-vendor-id truncated to 12 characters");
-        len = 12;
-    }
-    memset(cpu->hyperv_vendor_id, 0, 12);
-    memcpy(cpu->hyperv_vendor_id, cpu->hyperv_vendor, len);
-
-    /* 'Hv#1' interface identification*/
-    cpu->hyperv_interface_id[0] = 0x31237648;
-    cpu->hyperv_interface_id[1] = 0;
-    cpu->hyperv_interface_id[2] = 0;
-    cpu->hyperv_interface_id[3] = 0;
-
-    /* Hypervisor implementation limits */
-    cpu->hyperv_limits[0] = 64;
-    cpu->hyperv_limits[1] = 0;
-    cpu->hyperv_limits[2] = 0;
-}
-
 static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
 {
     CPUState *cs = CPU(dev);
@@ -6403,12 +6365,6 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
         error_setg(errp, "apic-id property was not initialized properly");
         return;
     }
-
-    /*
-     * Process Hyper-V enlightenments.
-     * Note: this currently has to happen before the expansion of CPU features.
-     */
-    x86_cpu_hyperv_realize(cpu);
 
     x86_cpu_expand_features(cpu, &local_err);
     if (local_err) {
