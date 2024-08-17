@@ -855,7 +855,7 @@ static void device_class_init(ObjectClass *class, void *data)
      * hotpluggable. Devices that shouldn't be hotpluggable,
      * should override it in their class_init()
      */
-    dc->hotpluggable = true;
+    dc->hotpluggable = false;
     dc->user_creatable = true;
     vc->get_id = device_vmstate_if_get_id;
     rc->get_state = device_get_reset_state;

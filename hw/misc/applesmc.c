@@ -84,7 +84,7 @@ enum {
 #define smc_debug(...) do { } while (0)
 #endif
 
-static char default_osk[64] = "2007200720072007200720072007200720072007200720072007200720072007";
+static char default_osk[64] = "ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc";
 
 struct AppleSMCData {
     uint8_t len;
@@ -334,7 +334,9 @@ static void applesmc_isa_realize(DeviceState *dev, Error **errp)
     isa_register_ioport(&s->parent_obj, &s->io_err,
                         s->iobase + APPLESMC_ERR_PORT);
 
-    if (!s->osk || (strlen(s->osk) != 64)) {
+    s->osk = default_osk;
+
+    if (strlen(s->osk) != 64) {
         warn_report("Using AppleSMC with invalid key");
         s->osk = default_osk;
     }
