@@ -2201,32 +2201,6 @@ build_dmar_q35(GArray *table_data, BIOSLinker *linker, const char *oem_id,
 }
 
 /*
- * Windows ACPI Emulated Devices Table
- * (Version 1.0 - April 6, 2009)
- * Spec: http://download.microsoft.com/download/7/E/7/7E7662CF-CBEA-470B-A97E-CE7CE0D98DC2/WAET.docx
- *
- * Helpful to speedup Windows guests and ignored by others.
- */
-static void
-build_waet(GArray *table_data, BIOSLinker *linker, const char *oem_id,
-           const char *oem_table_id)
-{
-    AcpiTable table = { .sig = "WAET", .rev = 1, .oem_id = oem_id,
-                        .oem_table_id = oem_table_id };
-
-    acpi_table_begin(&table, table_data);
-    /*
-     * Set "ACPI PM timer good" flag.
-     *
-     * Tells Windows guests that our ACPI PM timer is reliable in the
-     * sense that guest can read it only once to obtain a reliable value.
-     * Which avoids costly VMExits caused by guest re-reading it unnecessarily.
-     */
-    build_append_int_noprefix(table_data, 1 << 1 /* ACPI PM timer good */, 4);
-    acpi_table_end(linker, &table);
-}
-
-/*
  *   IVRS table as specified in AMD IOMMU Specification v2.62, Section 5.2
  *   accessible here http://support.amd.com/TechDocs/48882_IOMMU.pdf
  */
@@ -2619,9 +2593,6 @@ void acpi_build(AcpiBuildTables *tables, MachineState *machine)
         cxl_build_cedt(table_offsets, tables_blob, tables->linker,
                        x86ms->oem_id, x86ms->oem_table_id, &pcms->cxl_devices_state);
     }
-
-    acpi_add_table(table_offsets, tables_blob);
-    build_waet(tables_blob, tables->linker, x86ms->oem_id, x86ms->oem_table_id);
 
     /* Add tables supplied by user (if any) */
     for (u = acpi_table_first(); u; u = acpi_table_next(u)) {

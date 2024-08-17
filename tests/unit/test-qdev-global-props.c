@@ -179,7 +179,7 @@ static void hotplug_class_init(ObjectClass *oc, void *data)
     DeviceClass *dc = DEVICE_CLASS(oc);
 
     dc->realize = NULL;
-    dc->hotpluggable = true;
+    dc->hotpluggable = false;
 }
 
 static const TypeInfo hotplug_type = {
