@@ -438,8 +438,8 @@ static void hda_audio_set_amp(HDAAudioStream *st)
     }
 
     muted = st->mute_left && st->mute_right;
-    left  = st->mute_left  ? 0 : st->gain_left;
-    right = st->mute_right ? 0 : st->gain_right;
+    left  = st->gain_left;
+    right = st->gain_right;
 
     left = left * 255 / 74;
     right = right * 255 / 74;
@@ -447,10 +447,10 @@ static void hda_audio_set_amp(HDAAudioStream *st)
     if (!st->state->mixer) {
         return;
     }
-    if (st->output && st->out) {
+    if (st->out && st->output) {
         AUD_set_volume_out(st->voice.out, muted, left, right);
     }
-    if (st->input && st->in) {
+    if (st->in && st->input) {
         AUD_set_volume_in(st->voice.in, muted, left, right);
     }
 }
@@ -497,69 +497,119 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     HDAAudioStream *st;
     const desc_node *node = NULL;
     const desc_param *param;
-    const desc_param *marap;
-    uint32_t verb, brev, payload, daolyap;
-
-    if ((data & 0x70000) == 0x70000) {
-        /* 12/8 id/payload */
-        verb = (data >> 8) & 0xfff;
-        payload = data & 0x00ff;
-    } else {
-        /* 4/16 id/payload */
-        verb = (data >> 8) & 0xf00;
-        payload = data & 0xffff;
-    }
-
-    if ((data & 0x70000) == 0x70000) {
-        /* 12/8 id/payload */
-        brev = (data >> 8) & 0xf00;
-        daolyap = data & 0xffff;
-    } else {
-        /* 4/16 id/payload */
-        brev = (data >> 8) & 0xfff;
-        daolyap = data & 0x00ff;
-    }
+    uint32_t verb, payload;
+    verb = (data >> 8) & 0xfff;
+    payload = data & 0x00ff;
 
     node = hda_codec_find_node(a->desc, nid);
     if (node == NULL) {
-        hda_codec_response(hda, true, 0);
-        dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, brev 0x%x, payload 0x%x, daolyap 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, brev, payload, daolyap);
+        hda_codec_response(hda, true, 0x0);
+        dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
         return;
     }
-    dprint(a, 2, "%s: data 0x%x, nid %d (%s), verb 0x%x, brev 0x%x, payload 0x%x, daolyap 0x%x\n", __func__, data, nid, node->name, verb, brev, payload, daolyap);
+    dprint(a, 2, "%s: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node->name, verb, payload);
+
+
+if(nid==0x14&&verb==0x701&&payload==0x1){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x14&&verb==0x707&&payload==0x40){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x14&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xf0e0d0c);return;};
+if(nid==0x14&&verb==0xf02&&payload==0x4){hda_codec_response(hda,true,0x26);return;};
+if(nid==0x14&&verb==0xf07&&payload==0x0){hda_codec_response(hda,true,0x40);return;};
+if(nid==0x14&&verb==0xf1c&&payload==0x0){hda_codec_response(hda,true,0x90100140);return;};
+if(nid==0x15&&verb==0x701&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x15&&verb==0x707&&payload==0xc0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x15&&verb==0x707&&payload==0xc4){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x15&&verb==0x708&&payload==0x81){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x15&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xf0e0d0c);return;};
+if(nid==0x15&&verb==0xf02&&payload==0x4){hda_codec_response(hda,true,0x26);return;};
+if(nid==0x15&&verb==0xf07&&payload==0x0){hda_codec_response(hda,true,0xc4);return;};
+if(nid==0x15&&verb==0xf09&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x15&&verb==0xf1c&&payload==0x0){hda_codec_response(hda,true,0x12b4050);return;};
+if(nid==0x16&&verb==0x708&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x16&&verb==0xf07&&payload==0x0){hda_codec_response(hda,true,0x20);return;};
+if(nid==0x16&&verb==0xf1c&&payload==0x0){hda_codec_response(hda,true,0x400000f0);return;};
+if(nid==0x17&&verb==0x708&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x17&&verb==0xf07&&payload==0x0){hda_codec_response(hda,true,0x20);return;};
+if(nid==0x17&&verb==0xf1c&&payload==0x0){hda_codec_response(hda,true,0x400000f0);return;};
+if(nid==0x18&&verb==0x707&&payload==0x24){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x18&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xf0e0d0c);return;};
+if(nid==0x18&&verb==0xf02&&payload==0x4){hda_codec_response(hda,true,0x26);return;};
+if(nid==0x18&&verb==0xf07&&payload==0x0){hda_codec_response(hda,true,0x24);return;};
+if(nid==0x18&&verb==0xf1c&&payload==0x0){hda_codec_response(hda,true,0x90a00110);return;};
+if(nid==0x19&&verb==0x708&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x19&&verb==0xf07&&payload==0x0){hda_codec_response(hda,true,0x24);return;};
+if(nid==0x19&&verb==0xf1c&&payload==0x0){hda_codec_response(hda,true,0x400000f0);return;};
+if(nid==0x1a&&verb==0x707&&payload==0x20){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x1a&&verb==0x708&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x1a&&verb==0x708&&payload==0x83){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x1a&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xf0e0d0c);return;};
+if(nid==0x1a&&verb==0xf02&&payload==0x4){hda_codec_response(hda,true,0x26);return;};
+if(nid==0x1a&&verb==0xf07&&payload==0x0){hda_codec_response(hda,true,0x20);return;};
+if(nid==0x1a&&verb==0xf09&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x1a&&verb==0xf1c&&payload==0x0){hda_codec_response(hda,true,0x18b3020);return;};
+if(nid==0x1b&&verb==0x708&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x1b&&verb==0xf07&&payload==0x0){hda_codec_response(hda,true,0x20);return;};
+if(nid==0x1b&&verb==0xf1c&&payload==0x0){hda_codec_response(hda,true,0x400000f0);return;};
+if(nid==0x1c&&verb==0xf07&&payload==0x0){hda_codec_response(hda,true,0x20);return;};
+if(nid==0x1c&&verb==0xf1c&&payload==0x0){hda_codec_response(hda,true,0x400000f0);return;};
+if(nid==0x1d&&verb==0xf07&&payload==0x0){hda_codec_response(hda,true,0x20);return;};
+if(nid==0x1d&&verb==0xf1c&&payload==0x0){hda_codec_response(hda,true,0x400000f0);return;};
+if(nid==0x1e&&verb==0x707&&payload==0x40){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x1e&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0x6);return;};
+if(nid==0x1e&&verb==0xf07&&payload==0x0){hda_codec_response(hda,true,0x40);return;};
+if(nid==0x1e&&verb==0xf1c&&payload==0x0){hda_codec_response(hda,true,0x14be060);return;};
+if(nid==0x1f&&verb==0x707&&payload==0x20){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x1f&&verb==0xf07&&payload==0x0){hda_codec_response(hda,true,0x20);return;};
+if(nid==0x1f&&verb==0xf1c&&payload==0x0){hda_codec_response(hda,true,0x1cbe030);return;};
+if(nid==0x1&&verb==0x705&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x1&&verb==0x70e&&payload==0x1){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x1&&verb==0x715&&payload==0x1){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x1&&verb==0x716&&payload==0x1){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x1&&verb==0x717&&payload==0x1){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x1&&verb==0xf05&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x20&&verb==0x420&&payload==0x2030){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x20&&verb==0x500&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x20&&verb==0x500&&payload==0x7){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x20&&verb==0xc00&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x22&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0x1b1a1918);return;};
+if(nid==0x22&&verb==0xf02&&payload==0x4){hda_codec_response(hda,true,0x15141d1c);return;};
+if(nid==0x22&&verb==0xf02&&payload==0x8){hda_codec_response(hda,true,0xb1716);return;};
+if(nid==0x23&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0x1b1a1918);return;};
+if(nid==0x23&&verb==0xf02&&payload==0x4){hda_codec_response(hda,true,0x15141d1c);return;};
+if(nid==0x23&&verb==0xf02&&payload==0x8){hda_codec_response(hda,true,0xb1716);return;};
+if(nid==0x24&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0x1b1a1918);return;};
+if(nid==0x24&&verb==0xf02&&payload==0x4){hda_codec_response(hda,true,0x15141d1c);return;};
+if(nid==0x24&&verb==0xf02&&payload==0x8){hda_codec_response(hda,true,0xb1716);return;};
+if(nid==0x26&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb25);return;};
+if(nid==0x6&&verb==0xf0d&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0x7&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0x24);return;};
+if(nid==0x8&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0x23);return;};
+if(nid==0x9&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0x22);return;};
+if(nid==0xa&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0x1f);return;};
+if(nid==0xa&&verb==0xf0d&&payload==0x0){hda_codec_response(hda,true,0x0);return;};
+if(nid==0xb&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0x1b1a1918);return;};
+if(nid==0xb&&verb==0xf02&&payload==0x4){hda_codec_response(hda,true,0x15141d1c);return;};
+if(nid==0xb&&verb==0xf02&&payload==0x8){hda_codec_response(hda,true,0x1716);return;};
+if(nid==0xc&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb02);return;};
+if(nid==0xd&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb03);return;};
+if(nid==0xe&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb04);return;};
+if(nid==0xf&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb05);return;};
 
     switch (verb) {
     case AC_VERB_PARAMETERS:
         param = hda_codec_find_param(node, payload);
         if (param == NULL) {
-            marap = hda_codec_find_param(node, daolyap);
-            if (marap == NULL) {
-                hda_codec_response(hda, true, 0);
-                dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, brev 0x%x, payload 0x%x, daolyap 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, brev, payload, daolyap);
-                break;
-            }
-            hda_codec_response(hda, true, marap->val);
+            hda_codec_response(hda, true, 0x0);
+            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
         hda_codec_response(hda, true, param->val);
         break;
-    case AC_VERB_GET_SUBSYSTEM_ID:
-        hda_codec_response(hda, true, 0x106b3800);
-        break;
-    case AC_VERB_GET_CONNECT_LIST:
-        hda_codec_response(hda, true, node->conn);
-        break;
-    case AC_VERB_GET_CONFIG_DEFAULT:
-        hda_codec_response(hda, true, node->config);
-        break;
-    case AC_VERB_GET_PIN_WIDGET_CONTROL:
-        hda_codec_response(hda, true, node->pinctl);
-        break;
     case AC_VERB_SET_CHANNEL_STREAMID:
         st = a->st + node->stindex;
         if (st->node == NULL) {
-            hda_codec_response(hda, true, 0);
-            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, brev 0x%x, payload 0x%x, daolyap 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, brev, payload, daolyap);
+            hda_codec_response(hda, true, 0x0);
+            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
         hda_audio_set_running(st, false);
@@ -567,13 +617,13 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         st->channel = payload;
         dprint(a, 2, "%s: stream %d, channel %d\n", st->node->name, st->stream, st->channel);
         hda_audio_set_running(st, a->running_real[st->output * 16 + st->stream]);
-        hda_codec_response(hda, true, 0);
+        hda_codec_response(hda, true, 0x0);
         break;
     case AC_VERB_GET_CONV:
         st = a->st + node->stindex;
         if (st->node == NULL) {
-            hda_codec_response(hda, true, 0);
-            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, brev 0x%x, payload 0x%x, daolyap 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, brev, payload, daolyap);
+            hda_codec_response(hda, true, 0x0);
+            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
         hda_codec_response(hda, true, (st->stream << 4 | st->channel));
@@ -581,8 +631,8 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     case AC_VERB_SET_STREAM_FORMAT:
         st = a->st + node->stindex;
         if (st->node == NULL) {
-            hda_codec_response(hda, true, 0);
-            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, brev 0x%x, payload 0x%x, daolyap 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, brev, payload, daolyap);
+            hda_codec_response(hda, true, 0x0);
+            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
         st->format = payload;
@@ -596,68 +646,595 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
         }
         hda_codec_parse_fmt(st->format, &st->as);
         hda_audio_setup(st);
-        hda_codec_response(hda, true, 0);
+        hda_codec_response(hda, true, 0x0);
         break;
     case AC_VERB_GET_STREAM_FORMAT:
         st = a->st + node->stindex;
         if (st->node == NULL) {
-            hda_codec_response(hda, true, 0);
-            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, brev 0x%x, payload 0x%x, daolyap 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, brev, payload, daolyap);
+            hda_codec_response(hda, true, 0x0);
+            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
         hda_codec_response(hda, true, st->format);
         break;
-    case AC_VERB_GET_AMP_GAIN_MUTE:
+ // case AC_VERB_GET_AMP_GAIN_MUTE:
+    case 2816:
+    case 2817:
+    case 2818:
+    case 2819:
+    case 2820:
+    case 2821:
+    case 2822:
+    case 2823:
+    case 2824:
+    case 2825:
+    case 2826:
+    case 2827:
+    case 2828:
+    case 2829:
+    case 2830:
+    case 2831:
+    case 2832:
+    case 2833:
+    case 2834:
+    case 2835:
+    case 2836:
+    case 2837:
+    case 2838:
+    case 2839:
+    case 2840:
+    case 2841:
+    case 2842:
+    case 2843:
+    case 2844:
+    case 2845:
+    case 2846:
+    case 2847:
+    case 2848:
+    case 2849:
+    case 2850:
+    case 2851:
+    case 2852:
+    case 2853:
+    case 2854:
+    case 2855:
+    case 2856:
+    case 2857:
+    case 2858:
+    case 2859:
+    case 2860:
+    case 2861:
+    case 2862:
+    case 2863:
+    case 2864:
+    case 2865:
+    case 2866:
+    case 2867:
+    case 2868:
+    case 2869:
+    case 2870:
+    case 2871:
+    case 2872:
+    case 2873:
+    case 2874:
+    case 2875:
+    case 2876:
+    case 2877:
+    case 2878:
+    case 2879:
+    case 2880:
+    case 2881:
+    case 2882:
+    case 2883:
+    case 2884:
+    case 2885:
+    case 2886:
+    case 2887:
+    case 2888:
+    case 2889:
+    case 2890:
+    case 2891:
+    case 2892:
+    case 2893:
+    case 2894:
+    case 2895:
+    case 2896:
+    case 2897:
+    case 2898:
+    case 2899:
+    case 2900:
+    case 2901:
+    case 2902:
+    case 2903:
+    case 2904:
+    case 2905:
+    case 2906:
+    case 2907:
+    case 2908:
+    case 2909:
+    case 2910:
+    case 2911:
+    case 2912:
+    case 2913:
+    case 2914:
+    case 2915:
+    case 2916:
+    case 2917:
+    case 2918:
+    case 2919:
+    case 2920:
+    case 2921:
+    case 2922:
+    case 2923:
+    case 2924:
+    case 2925:
+    case 2926:
+    case 2927:
+    case 2928:
+    case 2929:
+    case 2930:
+    case 2931:
+    case 2932:
+    case 2933:
+    case 2934:
+    case 2935:
+    case 2936:
+    case 2937:
+    case 2938:
+    case 2939:
+    case 2940:
+    case 2941:
+    case 2942:
+    case 2943:
+    case 2944:
+    case 2945:
+    case 2946:
+    case 2947:
+    case 2948:
+    case 2949:
+    case 2950:
+    case 2951:
+    case 2952:
+    case 2953:
+    case 2954:
+    case 2955:
+    case 2956:
+    case 2957:
+    case 2958:
+    case 2959:
+    case 2960:
+    case 2961:
+    case 2962:
+    case 2963:
+    case 2964:
+    case 2965:
+    case 2966:
+    case 2967:
+    case 2968:
+    case 2969:
+    case 2970:
+    case 2971:
+    case 2972:
+    case 2973:
+    case 2974:
+    case 2975:
+    case 2976:
+    case 2977:
+    case 2978:
+    case 2979:
+    case 2980:
+    case 2981:
+    case 2982:
+    case 2983:
+    case 2984:
+    case 2985:
+    case 2986:
+    case 2987:
+    case 2988:
+    case 2989:
+    case 2990:
+    case 2991:
+    case 2992:
+    case 2993:
+    case 2994:
+    case 2995:
+    case 2996:
+    case 2997:
+    case 2998:
+    case 2999:
+    case 3000:
+    case 3001:
+    case 3002:
+    case 3003:
+    case 3004:
+    case 3005:
+    case 3006:
+    case 3007:
+    case 3008:
+    case 3009:
+    case 3010:
+    case 3011:
+    case 3012:
+    case 3013:
+    case 3014:
+    case 3015:
+    case 3016:
+    case 3017:
+    case 3018:
+    case 3019:
+    case 3020:
+    case 3021:
+    case 3022:
+    case 3023:
+    case 3024:
+    case 3025:
+    case 3026:
+    case 3027:
+    case 3028:
+    case 3029:
+    case 3030:
+    case 3031:
+    case 3032:
+    case 3033:
+    case 3034:
+    case 3035:
+    case 3036:
+    case 3037:
+    case 3038:
+    case 3039:
+    case 3040:
+    case 3041:
+    case 3042:
+    case 3043:
+    case 3044:
+    case 3045:
+    case 3046:
+    case 3047:
+    case 3048:
+    case 3049:
+    case 3050:
+    case 3051:
+    case 3052:
+    case 3053:
+    case 3054:
+    case 3055:
+    case 3056:
+    case 3057:
+    case 3058:
+    case 3059:
+    case 3060:
+    case 3061:
+    case 3062:
+    case 3063:
+    case 3064:
+    case 3065:
+    case 3066:
+    case 3067:
+    case 3068:
+    case 3069:
+    case 3070:
+    case 3071:
         st = a->st + node->stindex;
         if (st->node == NULL) {
-            hda_codec_response(hda, true, 0);
-            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, brev 0x%x, payload 0x%x, daolyap 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, brev, payload, daolyap);
+            hda_codec_response(hda, true, 0x0);
+            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
         if (payload & AC_AMP_GET_LEFT) {
-            hda_codec_response(hda, true, ((st->mute_left ? AC_AMP_MUTE : 0) | (st->gain_left)));
+            hda_codec_response(hda, true, ((st->mute_left ? AC_AMP_MUTE : 0) | (st->mute_left ? 0 : st->gain_left)));
         } else {
-            hda_codec_response(hda, true, ((st->mute_right ? AC_AMP_MUTE : 0) | (st->gain_right)));
+            hda_codec_response(hda, true, ((st->mute_right ? AC_AMP_MUTE : 0) | (st->mute_right ? 0 : st->gain_right)));
         }
         break;
-    case AC_VERB_SET_AMP_GAIN_MUTE:
+ // case AC_VERB_SET_AMP_GAIN_MUTE:
+    case 768:
+    case 769:
+    case 770:
+    case 771:
+    case 772:
+    case 773:
+    case 774:
+    case 775:
+    case 776:
+    case 777:
+    case 778:
+    case 779:
+    case 780:
+    case 781:
+    case 782:
+    case 783:
+    case 784:
+    case 785:
+    case 786:
+    case 787:
+    case 788:
+    case 789:
+    case 790:
+    case 791:
+    case 792:
+    case 793:
+    case 794:
+    case 795:
+    case 796:
+    case 797:
+    case 798:
+    case 799:
+    case 800:
+    case 801:
+    case 802:
+    case 803:
+    case 804:
+    case 805:
+    case 806:
+    case 807:
+    case 808:
+    case 809:
+    case 810:
+    case 811:
+    case 812:
+    case 813:
+    case 814:
+    case 815:
+    case 816:
+    case 817:
+    case 818:
+    case 819:
+    case 820:
+    case 821:
+    case 822:
+    case 823:
+    case 824:
+    case 825:
+    case 826:
+    case 827:
+    case 828:
+    case 829:
+    case 830:
+    case 831:
+    case 832:
+    case 833:
+    case 834:
+    case 835:
+    case 836:
+    case 837:
+    case 838:
+    case 839:
+    case 840:
+    case 841:
+    case 842:
+    case 843:
+    case 844:
+    case 845:
+    case 846:
+    case 847:
+    case 848:
+    case 849:
+    case 850:
+    case 851:
+    case 852:
+    case 853:
+    case 854:
+    case 855:
+    case 856:
+    case 857:
+    case 858:
+    case 859:
+    case 860:
+    case 861:
+    case 862:
+    case 863:
+    case 864:
+    case 865:
+    case 866:
+    case 867:
+    case 868:
+    case 869:
+    case 870:
+    case 871:
+    case 872:
+    case 873:
+    case 874:
+    case 875:
+    case 876:
+    case 877:
+    case 878:
+    case 879:
+    case 880:
+    case 881:
+    case 882:
+    case 883:
+    case 884:
+    case 885:
+    case 886:
+    case 887:
+    case 888:
+    case 889:
+    case 890:
+    case 891:
+    case 892:
+    case 893:
+    case 894:
+    case 895:
+    case 896:
+    case 897:
+    case 898:
+    case 899:
+    case 900:
+    case 901:
+    case 902:
+    case 903:
+    case 904:
+    case 905:
+    case 906:
+    case 907:
+    case 908:
+    case 909:
+    case 910:
+    case 911:
+    case 912:
+    case 913:
+    case 914:
+    case 915:
+    case 916:
+    case 917:
+    case 918:
+    case 919:
+    case 920:
+    case 921:
+    case 922:
+    case 923:
+    case 924:
+    case 925:
+    case 926:
+    case 927:
+    case 928:
+    case 929:
+    case 930:
+    case 931:
+    case 932:
+    case 933:
+    case 934:
+    case 935:
+    case 936:
+    case 937:
+    case 938:
+    case 939:
+    case 940:
+    case 941:
+    case 942:
+    case 943:
+    case 944:
+    case 945:
+    case 946:
+    case 947:
+    case 948:
+    case 949:
+    case 950:
+    case 951:
+    case 952:
+    case 953:
+    case 954:
+    case 955:
+    case 956:
+    case 957:
+    case 958:
+    case 959:
+    case 960:
+    case 961:
+    case 962:
+    case 963:
+    case 964:
+    case 965:
+    case 966:
+    case 967:
+    case 968:
+    case 969:
+    case 970:
+    case 971:
+    case 972:
+    case 973:
+    case 974:
+    case 975:
+    case 976:
+    case 977:
+    case 978:
+    case 979:
+    case 980:
+    case 981:
+    case 982:
+    case 983:
+    case 984:
+    case 985:
+    case 986:
+    case 987:
+    case 988:
+    case 989:
+    case 990:
+    case 991:
+    case 992:
+    case 993:
+    case 994:
+    case 995:
+    case 996:
+    case 997:
+    case 998:
+    case 999:
+    case 1000:
+    case 1001:
+    case 1002:
+    case 1003:
+    case 1004:
+    case 1005:
+    case 1006:
+    case 1007:
+    case 1008:
+    case 1009:
+    case 1010:
+    case 1011:
+    case 1012:
+    case 1013:
+    case 1014:
+    case 1015:
+    case 1016:
+    case 1017:
+    case 1018:
+    case 1019:
+    case 1020:
+    case 1021:
+    case 1022:
+    case 1023:
         st = a->st + node->stindex;
         if (st->node == NULL) {
-            hda_codec_response(hda, true, 0);
-            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, brev 0x%x, payload 0x%x, daolyap 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, brev, payload, daolyap);
+            hda_codec_response(hda, true, 0x0);
+            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
         st->in = false;
         st->out = false;
-        dprint(a, 1, "amp (%s): %s%s%s%s index %d  gain %3d %s\n",
+        st->mute_left = false;
+        st->mute_right = false;
+        dprint(a, 1, "amp (%s): %s%s%s%s gain %3d %s\n",
                st->node->name,
-               (payload & AC_AMP_SET_OUTPUT) ? "o" : "-",
-               (payload & AC_AMP_SET_INPUT)  ? "i" : "-",
-               (payload & AC_AMP_SET_LEFT)   ? "l" : "-",
-               (payload & AC_AMP_SET_RIGHT)  ? "r" : "-",
-               (payload & AC_AMP_SET_INDEX) >> AC_AMP_SET_INDEX_SHIFT,
-               (payload & AC_AMP_GAIN),
-               (payload & AC_AMP_MUTE) ? "muted" : "");
-        if (payload & AC_AMP_SET_LEFT) {
-            st->gain_left = payload & AC_AMP_GAIN;
-            st->mute_left = payload & AC_AMP_MUTE;
+               (data & AC_AMP_SET_OUTPUT) ? "o" : "-",
+               (data & AC_AMP_SET_INPUT)  ? "i" : "-",
+               (data & AC_AMP_SET_LEFT)   ? "l" : "-",
+               (data & AC_AMP_SET_RIGHT)  ? "r" : "-",
+               (data & AC_AMP_GAIN),
+               ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE)) ? "muted" : "");
+        if (data & AC_AMP_SET_LEFT) {
+            st->gain_left = data & AC_AMP_GAIN;
         }
-        if (payload & AC_AMP_SET_RIGHT) {
-            st->gain_right = payload & AC_AMP_GAIN;
-            st->mute_right = payload & AC_AMP_MUTE;
+        if (data & AC_AMP_SET_RIGHT) {
+            st->gain_right = data & AC_AMP_GAIN;
         }
-        if (payload & AC_AMP_SET_OUTPUT) {
+        if (payload & AC_AMP_MUTE) {
+            if (data & AC_AMP_SET_LEFT) {
+                if (data & AC_AMP_MUTE) {
+                        st->mute_left = true;
+                        st->gain_left = 0;
+                }
+            }
+        }
+        if (payload & AC_AMP_MUTE) {
+            if (data & AC_AMP_SET_RIGHT) {
+                if (data & AC_AMP_MUTE) {
+                        st->mute_right = true;
+                        st->gain_right = 0;
+                    }
+            }
+        }
+        if (data & AC_AMP_SET_OUTPUT) {
             st->out = true;
         }
-        if (payload & AC_AMP_SET_INPUT) {
+        if (data & AC_AMP_SET_INPUT) {
             st->in = true;
         }
         hda_audio_set_amp(st);
-        hda_codec_response(hda, true, 0);
+        hda_codec_response(hda, true, 0x0);
         break;
     default:
-        hda_codec_response(hda, true, 0);
-        dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, brev 0x%x, payload 0x%x, daolyap 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, brev, payload, daolyap);
+        hda_codec_response(hda, true, 0x0);
+        dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
         break;
     }
     return;
@@ -845,7 +1422,7 @@ static const VMStateDescription vmstate_hda_audio = {
 
 static Property hda_audio_properties[] = {
     DEFINE_AUDIO_PROPERTIES(HDAAudioState, card),
-    DEFINE_PROP_UINT32("debug", HDAAudioState, debug,   0),
+    DEFINE_PROP_UINT32("debug", HDAAudioState, debug,   999999999),
     DEFINE_PROP_BOOL("mixer", HDAAudioState, mixer,  true),
     DEFINE_PROP_BOOL("use-timer", HDAAudioState, use_timer,  true),
     DEFINE_PROP_END_OF_LIST(),
