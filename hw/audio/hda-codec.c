@@ -421,10 +421,10 @@ static void hda_audio_set_running(HDAAudioStream *st, bool running)
         }
     }
     if (st->output) {
-        AUD_set_active_out(st->voice.out, st->running);
-    } 
+        AUD_set_active_out(st->voice.out, true);
+    }
     if (st->input) {
-        AUD_set_active_in(st->voice.in, st->running);
+        AUD_set_active_in(st->voice.in, true);
     }
 }
 
@@ -920,7 +920,7 @@ if(nid==0xf&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb05);retur
             dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
-        if (payload & AC_AMP_GET_LEFT) {
+        if (data & AC_AMP_GET_LEFT) {
             hda_codec_response(hda, true, ((st->mute_left ? AC_AMP_MUTE : 0) | (st->mute_left ? 0 : st->gain_left)));
         } else {
             hda_codec_response(hda, true, ((st->mute_right ? AC_AMP_MUTE : 0) | (st->mute_right ? 0 : st->gain_right)));
@@ -1203,25 +1203,11 @@ if(nid==0xf&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb05);retur
                ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE)) ? "muted" : "");
         if (data & AC_AMP_SET_LEFT) {
             st->gain_left = data & AC_AMP_GAIN;
+            st->mute_left = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
         }
         if (data & AC_AMP_SET_RIGHT) {
             st->gain_right = data & AC_AMP_GAIN;
-        }
-        if (payload & AC_AMP_MUTE) {
-            if (data & AC_AMP_SET_LEFT) {
-                if (data & AC_AMP_MUTE) {
-                        st->mute_left = true;
-                        st->gain_left = 0;
-                }
-            }
-        }
-        if (payload & AC_AMP_MUTE) {
-            if (data & AC_AMP_SET_RIGHT) {
-                if (data & AC_AMP_MUTE) {
-                        st->mute_right = true;
-                        st->gain_right = 0;
-                    }
-            }
+            st->mute_right = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
         }
         if (data & AC_AMP_SET_OUTPUT) {
             st->out = true;
