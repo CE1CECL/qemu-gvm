@@ -607,13 +607,11 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "four",
         .params  = glue(paramaters_four_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_four_, PARAM)),
-        .stindex = 0x0,
     },{
         .nid     = 0x5,
         .name    = "five",
         .params  = glue(paramaters_five_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_five_, PARAM)),
-        .stindex = 0x0,
     },{
         .nid     = 0x6,
         .name    = "six",
@@ -624,6 +622,7 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "seven",
         .params  = glue(paramaters_seven_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_seven_, PARAM)),
+        .stindex = 0x1,
     },{
         .nid     = 0x8,
         .name    = "eight",
@@ -635,6 +634,7 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "nine",
         .params  = glue(paramaters_nine_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_nine_, PARAM)),
+        .stindex = 0x1,
     },{
         .nid     = 0xa,
         .name    = "a",
@@ -661,13 +661,11 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "e",
         .params  = glue(paramaters_e_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_e_, PARAM)),
-        .stindex = 0x0,
     },{
         .nid     = 0xf,
         .name    = "f",
         .params  = glue(paramaters_f_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_f_, PARAM)),
-        .stindex = 0x1,
     },{
         .nid     = 0x10,
         .name    = "ten",
@@ -693,13 +691,11 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "fourteen",
         .params  = glue(paramaters_fourteen_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_fourteen_, PARAM)),
-        .stindex = 0x0,
     },{
         .nid     = 0x15,
         .name    = "fifteen",
         .params  = glue(paramaters_fifteen_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_fifteen_, PARAM)),
-        .stindex = 0x0,
     },{
         .nid     = 0x16,
         .name    = "sixteen",
@@ -715,7 +711,6 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "eighteen",
         .params  = glue(paramaters_eighteen_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_eighteen_, PARAM)),
-        .stindex = 0x1,
     },{
         .nid     = 0x19,
         .name    = "nineteen",
@@ -726,7 +721,6 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "one_a",
         .params  = glue(paramaters_one_a_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_one_a_, PARAM)),
-        .stindex = 0x1,
     },{
         .nid     = 0x1b,
         .name    = "one_b",
@@ -747,13 +741,11 @@ static const desc_node glue(nodes_realtek_alc_, PARAM)[] = {
         .name    = "one_e",
         .params  = glue(paramaters_one_e_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_one_e_, PARAM)),
-        .stindex = 0x0,
     },{
         .nid     = 0x1f,
         .name    = "one_f",
         .params  = glue(paramaters_one_f_, PARAM),
         .nparams = ARRAY_SIZE(glue(paramaters_one_f_, PARAM)),
-        .stindex = 0x1,
     },{
         .nid     = 0x20,
         .name    = "twenty",

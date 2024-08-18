@@ -509,7 +509,6 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
     }
     dprint(a, 2, "%s: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node->name, verb, payload);
 
-
 if(nid==0x14&&verb==0x701&&payload==0x1){hda_codec_response(hda,true,0x0);return;};
 if(nid==0x14&&verb==0x707&&payload==0x40){hda_codec_response(hda,true,0x0);return;};
 if(nid==0x14&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xf0e0d0c);return;};
@@ -638,11 +637,10 @@ if(nid==0xf&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb05);retur
         st->format = payload;
         st->output = false;
         st->input = false;
-        if (node->stindex == 0) {
-            st->output = true;
-        }
         if (node->stindex == 1) {
             st->input = true;
+        } else {
+            st->output = true;
         }
         hda_codec_parse_fmt(st->format, &st->as);
         hda_audio_setup(st);
