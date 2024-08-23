@@ -4259,8 +4259,6 @@ static char *feature_word_description(FeatureWordInfo *f, uint32_t bit)
     return NULL;
 }
 
-#ifdef ChrisEric1CECL
-#else
 static bool x86_cpu_have_filtered_features(X86CPU *cpu)
 {
     FeatureWord w;
@@ -4273,7 +4271,6 @@ static bool x86_cpu_have_filtered_features(X86CPU *cpu)
 
     return false;
 }
-#endif
 
 static void mark_unavailable_features(X86CPU *cpu, FeatureWord w, uint64_t mask,
                                       const char *verbose_prefix)
@@ -4689,10 +4686,7 @@ static void x86_cpu_parse_featurestr(const char *typename, char *features,
     }
 }
 
-#ifdef ChrisEric1CECL
-#else
 static void x86_cpu_filter_features(X86CPU *cpu, bool verbose);
-#endif
 
 /* Build a list with the name of all features on a feature word array */
 static void x86_cpu_list_feature_names(FeatureWordArray features,
@@ -4962,6 +4956,7 @@ uint64_t x86_cpu_get_supported_feature_word(FeatureWord w,
                                     wi->cpuid.ecx,
                                     wi->cpuid.reg);
     } else if (tcg_enabled()) {
+        #define ChrisEric1CECL
         r = wi->tcg_features;
     } else {
         return ~0;
@@ -6291,8 +6286,6 @@ void x86_cpu_expand_features(X86CPU *cpu, Error **errp)
 
 }
 
-#ifdef ChrisEric1CECL
-#else
 static void x86_cpu_filter_features(X86CPU *cpu, bool verbose)
 {
     CPUX86State *env = &cpu->env;
@@ -6341,7 +6334,6 @@ static void x86_cpu_filter_features(X86CPU *cpu, bool verbose)
         }
     }
 }
-#endif
 
 static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
 {
