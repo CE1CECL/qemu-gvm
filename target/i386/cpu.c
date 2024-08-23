@@ -1537,39 +1537,30 @@ static uint64_t x86_cpu_get_migratable_flags(FeatureWord w)
 void host_cpuid(uint32_t function, uint32_t count,
                 uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
 {
-#ifdef ChrisEric1CECL
-	asm volatile("cpuid" : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx) : "a"(function), "c"(count) : "cc", "memory");
-#else
-    uint32_t vec[4];
+	uint32_t vec[4];
 
-#ifdef __x86_64__
-    asm volatile("cpuid"
-                 : "=a"(vec[0]), "=b"(vec[1]),
-                   "=c"(vec[2]), "=d"(vec[3])
-                 : "0"(function), "c"(count) : "cc");
-#elif defined(__i386__)
-    asm volatile("pusha \n\t"
-                 "cpuid \n\t"
-                 "mov %%eax, 0(%2) \n\t"
-                 "mov %%ebx, 4(%2) \n\t"
-                 "mov %%ecx, 8(%2) \n\t"
-                 "mov %%edx, 12(%2) \n\t"
-                 "popa"
-                 : : "a"(function), "c"(count), "S"(vec)
-                 : "memory", "cc");
-#else
-    abort();
-#endif
+	asm volatile("cpuid" : "=a"(vec[0]), "=b"(vec[1]), "=c"(vec[2]), "=d"(vec[3]) : "a"(function), "c"(count) : "cc", "memory");
 
-    if (eax)
-        *eax = vec[0];
-    if (ebx)
-        *ebx = vec[1];
-    if (ecx)
-        *ecx = vec[2];
-    if (edx)
-        *edx = vec[3];
-#endif
+	if ((eax) && (vec[0] != 0)) {
+		*eax = vec[0];
+	} else if (eax) {
+		*eax = 0;
+	}
+	if ((ebx) && (vec[1] != 0)) {
+		*ebx = vec[1];
+	} else if (ebx) {
+		*ebx = 0;
+	}
+	if ((ecx) && (vec[2] != 0)) {
+		*ecx = vec[2];
+	} else if (ecx) {
+		*ecx = 0;
+	}
+	if ((edx) && (vec[3] != 0)) {
+		*edx = vec[3];
+	} else if (edx) {
+		*edx = 0;
+	}
 }
 
 /* CPU class name definitions: */
@@ -4745,10 +4736,10 @@ static void x86_cpu_class_check_missing_features(X86CPUClass *xcc,
         error_free(err);
     }
 
-#ifdef ChrisEric1CECL
-#else
+if (tcg_enabled()) {
+} else {
     x86_cpu_filter_features(xc, false);
-#endif
+}
 
     x86_cpu_list_feature_names(xc->filtered_features, tail);
 
@@ -4957,7 +4948,6 @@ uint64_t x86_cpu_get_supported_feature_word(FeatureWord w,
                                     wi->cpuid.ecx,
                                     wi->cpuid.reg);
     } else if (tcg_enabled()) {
-        #define ChrisEric1CECL
         r = wi->tcg_features;
     } else {
         return ~0;
@@ -5228,10 +5218,10 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
     uint32_t limit;
     X86CPUTopoInfo topo_info;
 
-#ifdef ChrisEric1CECL
+if (tcg_enabled()) {
 	host_cpuid(index, count, eax, ebx, ecx, edx);
 	return;
-#endif
+}
 
     topo_info.dies_per_pkg = env->nr_dies;
     topo_info.cores_per_die = cs->nr_cores;
@@ -6287,6 +6277,7 @@ void x86_cpu_expand_features(X86CPU *cpu, Error **errp)
 
 }
 
+
 static void x86_cpu_filter_features(X86CPU *cpu, bool verbose)
 {
     CPUX86State *env = &cpu->env;
@@ -6392,8 +6383,8 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
         }
     }
 
-#ifdef ChrisEric1CECL
-#else
+if (tcg_enabled()) {
+} else {
     x86_cpu_filter_features(cpu, cpu->check_cpuid || cpu->enforce_cpuid);
     if (cpu->enforce_cpuid && x86_cpu_have_filtered_features(cpu)) {
         error_setg(&local_err,
@@ -6402,7 +6393,7 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
                        "TCG doesn't support requested features");
         goto out;
     }
-#endif
+}
 
     /* On AMD CPUs, some CPUID[8000_0001].EDX bits must match the bits on
      * CPUID[1].EDX.
@@ -6427,14 +6418,14 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
         return;
     }
 
-#ifdef ChrisEric1CECL
-#else
+if (tcg_enabled()) {
+} else {
     if (xcc->host_cpuid_required && !accel_uses_host_cpuid()) {
         g_autofree char *name = x86_cpu_class_get_model_name(xcc);
         error_setg(&local_err, "CPU model '%s' requires KVM or HVF", name);
         goto out;
     }
-#endif
+}
 
     /*
      * mwait extended info: needed for Core compatibility
