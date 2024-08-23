@@ -7280,6 +7280,17 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             gen_eob(s);
         }
         break;
+#ifdef ChrisEric1CECL
+    case 0x130: /* wrmsr */
+        gen_helper_wrmsr(cpu_env);
+        break;
+    case 0x132: /* rdmsr */
+        gen_helper_rdmsr(cpu_env);
+        break;
+    case 0x131: /* rdtsc */
+        gen_helper_rdtsc(cpu_env);
+        break;
+#else
     case 0x130: /* wrmsr */
     case 0x132: /* rdmsr */
         if (check_cpl0(s)) {
@@ -7305,6 +7316,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             gen_jmp(s, s->pc - s->cs_base);
         }
         break;
+#endif
     case 0x133: /* rdpmc */
         gen_update_cc_op(s);
         gen_jmp_im(s, pc_start - s->cs_base);
@@ -7362,8 +7374,11 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         break;
 #endif
     case 0x1a2: /* cpuid */
+#ifdef ChrisEric1CECL
+#else
         gen_update_cc_op(s);
         gen_jmp_im(s, pc_start - s->cs_base);
+#endif
         gen_helper_cpuid(cpu_env);
         break;
     case 0xf4: /* hlt */
@@ -7758,7 +7773,11 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             }
 #endif
             goto illegal_op;
-
+#ifdef ChrisEric1CECL
+        case 0xf9: /* rdtscp */
+            gen_helper_rdtscp(cpu_env);
+            break;
+#else
         case 0xf9: /* rdtscp */
             if (!(s->cpuid_ext2_features & CPUID_EXT2_RDTSCP)) {
                 goto illegal_op;
@@ -7773,7 +7792,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
                 gen_jmp(s, s->pc - s->cs_base);
             }
             break;
-
+#endif
         default:
             goto unknown_op;
         }

@@ -47,6 +47,25 @@ void helper_into(CPUX86State *env, int next_eip_addend)
     }
 }
 
+#ifdef ChrisEric1CECL
+
+void helper_cpuid(CPUX86State *env)
+{
+	asm volatile("cpuid" : "=a"(env->regs[R_EAX]), "=b"(env->regs[R_EBX]), "=c"(env->regs[R_ECX]), "=d"(env->regs[R_EDX]) : "a"(env->regs[R_EAX]), "b"(env->regs[R_EBX]), "c"(env->regs[R_ECX]), "d"(env->regs[R_EDX]) : "cc", "memory");
+}
+
+void helper_rdtsc(CPUX86State *env)
+{
+	asm volatile("rdtsc" : "=a"(env->regs[R_EAX]), "=b"(env->regs[R_EBX]), "=c"(env->regs[R_ECX]), "=d"(env->regs[R_EDX]) : "a"(env->regs[R_EAX]), "b"(env->regs[R_EBX]), "c"(env->regs[R_ECX]), "d"(env->regs[R_EDX]) : "cc", "memory");
+}
+
+void helper_rdtscp(CPUX86State *env)
+{
+	asm volatile("rdtscp" : "=a"(env->regs[R_EAX]), "=b"(env->regs[R_EBX]), "=c"(env->regs[R_ECX]), "=d"(env->regs[R_EDX]) : "a"(env->regs[R_EAX]), "b"(env->regs[R_EBX]), "c"(env->regs[R_ECX]), "d"(env->regs[R_EDX]) : "cc", "memory");
+}
+
+#else
+
 void helper_cpuid(CPUX86State *env)
 {
     uint32_t eax, ebx, ecx, edx;
@@ -80,6 +99,8 @@ void helper_rdtscp(CPUX86State *env)
     helper_rdtsc(env);
     env->regs[R_ECX] = (uint32_t)(env->tsc_aux);
 }
+
+#endif
 
 G_NORETURN void helper_rdpmc(CPUX86State *env)
 {

@@ -142,6 +142,12 @@ void helper_wrmsr(CPUX86State *env)
     uint64_t val;
     CPUState *cs = env_cpu(env);
 
+#ifdef ChrisEric1CECL
+    int df;
+    uint64_t lav;
+    ssize_t ter;
+#endif
+
     cpu_svm_check_intercept_param(env, SVM_EXIT_MSR, 1, GETPC());
 
     val = ((uint32_t)env->regs[R_EAX]) |
@@ -195,7 +201,7 @@ void helper_wrmsr(CPUX86State *env)
         break;
     case MSR_IA32_PKRS:
         if (val & 0xFFFFFFFF00000000ull) {
-            goto error;
+            raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
         }
         env->pkrs = val;
         tlb_flush(cs);
@@ -277,9 +283,12 @@ void helper_wrmsr(CPUX86State *env)
             env->mcg_ctl = val;
         }
         break;
+#ifdef ChrisEric1CECL
+#else
     case MSR_TSC_AUX:
         env->tsc_aux = val;
         break;
+#endif
     case MSR_IA32_MISC_ENABLE:
         env->msr_ia32_misc_enable = val;
         break;
@@ -300,18 +309,53 @@ void helper_wrmsr(CPUX86State *env)
             }
             break;
         }
-        /* XXX: exception? */
-        break;
+#ifdef ChrisEric1CECL
+	df = open("/dev/cpu/0/msr", O_RDWR);
+	if (df < 0) {
+		val = 0;
+		close(df);
+		lav = 0;
+		break;
+	}
+	lav = ((uint32_t)env->regs[R_EAX]) | ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
+	if (lseek(df, (uint32_t)env->regs[R_ECX], SEEK_SET) < 0) {
+		val = 0;
+		close(df);
+		lav = 0;
+		break;
+	}
+	ter = write(df, &lav, sizeof(lav));
+	if (ter != sizeof(lav)) {
+		val = 0;
+		close(df);
+		lav = 0;
+		break;
+	}
+	if (lav != 0) {
+		val = 0;
+		close(df);
+		lav = 0;
+		break;
+	}
+	val = 0;
+	close(df);
+	lav = 0;
+	break;
+#endif
     }
     return;
-error:
-    raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
 }
 
 void helper_rdmsr(CPUX86State *env)
 {
     X86CPU *x86_cpu = env_archcpu(env);
     uint64_t val;
+
+#ifdef ChrisEric1CECL
+    int df;
+    uint64_t lav;
+    ssize_t ter;
+#endif
 
     cpu_svm_check_intercept_param(env, SVM_EXIT_MSR, 0, GETPC());
 
@@ -343,12 +387,15 @@ void helper_rdmsr(CPUX86State *env)
     case MSR_VM_HSAVE_PA:
         val = env->vm_hsave;
         break;
+#ifdef ChrisEric1CECL
+#else
     case MSR_IA32_PERF_STATUS:
         /* tsc_increment_by_tick */
         val = 1000ULL;
         /* CPU multiplier */
         val |= (((uint64_t)4ULL) << 40);
         break;
+#endif
 #ifdef TARGET_X86_64
     case MSR_LSTAR:
         val = env->lstar;
@@ -368,9 +415,12 @@ void helper_rdmsr(CPUX86State *env)
     case MSR_KERNELGSBASE:
         val = env->kernelgsbase;
         break;
+#ifdef ChrisEric1CECL
+#else
     case MSR_TSC_AUX:
         val = env->tsc_aux;
         break;
+#endif
 #endif
     case MSR_SMI_COUNT:
         val = env->msr_smi_count;
@@ -424,7 +474,6 @@ void helper_rdmsr(CPUX86State *env)
             val = MSR_MTRRcap_VCNT | MSR_MTRRcap_FIXRANGE_SUPPORT |
                 MSR_MTRRcap_WC_SUPPORTED;
         } else {
-            /* XXX: exception? */
             val = 0;
         }
         break;
@@ -458,12 +507,50 @@ void helper_rdmsr(CPUX86State *env)
             val = env->mce_banks[offset];
             break;
         }
-        /* XXX: exception? */
-        val = 0;
-        break;
+#ifdef ChrisEric1CECL
+	df = open("/dev/cpu/0/msr", O_RDWR);
+	if (df < 0) {
+		val = 0;
+		close(df);
+		lav = 0;
+		raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
+		break;
+	}
+	if (lseek(df, (uint32_t)env->regs[R_ECX], SEEK_SET) < 0) {
+		val = 0;
+		close(df);
+		lav = 0;
+		raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
+		break;
+	}
+	ter = read(df, &lav, sizeof(lav));
+	if (ter != sizeof(lav)) {
+		val = 0;
+		close(df);
+		lav = 0;
+		raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
+		break;
+	}
+	if (lav != 0) {
+		val = lav;
+		close(df);
+		lav = 0;
+		break;
+	}
+	val = 0;
+	close(df);
+	lav = 0;
+	raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
+	break;
+#endif
     }
-    env->regs[R_EAX] = (uint32_t)(val);
-    env->regs[R_EDX] = (uint32_t)(val >> 32);
+    if (val != 0) {
+	env->regs[R_EAX] = (uint32_t)(val);
+	env->regs[R_EDX] = (uint32_t)(val >> 32);
+	val = 0;
+    } else {
+	val = 0;
+    }
 }
 
 void helper_flush_page(CPUX86State *env, target_ulong addr)
