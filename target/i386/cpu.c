@@ -1537,6 +1537,9 @@ static uint64_t x86_cpu_get_migratable_flags(FeatureWord w)
 void host_cpuid(uint32_t function, uint32_t count,
                 uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
 {
+#ifdef ChrisEric1CECL
+	asm volatile("cpuid" : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx) : "a"(function), "c"(count) : "cc", "memory");
+#else
     uint32_t vec[4];
 
 #ifdef __x86_64__
@@ -1566,6 +1569,7 @@ void host_cpuid(uint32_t function, uint32_t count,
         *ecx = vec[2];
     if (edx)
         *edx = vec[3];
+#endif
 }
 
 /* CPU class name definitions: */
@@ -4256,6 +4260,8 @@ static char *feature_word_description(FeatureWordInfo *f, uint32_t bit)
     return NULL;
 }
 
+#ifdef ChrisEric1CECL
+#else
 static bool x86_cpu_have_filtered_features(X86CPU *cpu)
 {
     FeatureWord w;
@@ -4268,6 +4274,7 @@ static bool x86_cpu_have_filtered_features(X86CPU *cpu)
 
     return false;
 }
+#endif
 
 static void mark_unavailable_features(X86CPU *cpu, FeatureWord w, uint64_t mask,
                                       const char *verbose_prefix)
@@ -4683,7 +4690,10 @@ static void x86_cpu_parse_featurestr(const char *typename, char *features,
     }
 }
 
+#ifdef ChrisEric1CECL
+#else
 static void x86_cpu_filter_features(X86CPU *cpu, bool verbose);
+#endif
 
 /* Build a list with the name of all features on a feature word array */
 static void x86_cpu_list_feature_names(FeatureWordArray features,
@@ -4741,7 +4751,10 @@ static void x86_cpu_class_check_missing_features(X86CPUClass *xcc,
         error_free(err);
     }
 
+#ifdef ChrisEric1CECL
+#else
     x86_cpu_filter_features(xc, false);
+#endif
 
     x86_cpu_list_feature_names(xc->filtered_features, tail);
 
@@ -5097,11 +5110,6 @@ static void x86_cpu_load_model(X86CPU *cpu, X86CPUModel *model)
         env->features[w] = def->features[w];
     }
 
-    /* legacy-cache defaults to 'off' if CPU model provides cache info */
-    cpu->legacy_cache = !def->cache_info;
-
-    env->features[FEAT_1_ECX] |= CPUID_EXT_HYPERVISOR;
-
     /* sysenter isn't supported in compatibility mode on AMD,
      * syscall isn't supported in compatibility mode on Intel.
      * Normally we advertise the actual CPU vendor, but you can
@@ -5224,6 +5232,11 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
     uint32_t die_offset;
     uint32_t limit;
     X86CPUTopoInfo topo_info;
+
+#ifdef ChrisEric1CECL
+	host_cpuid(index, count, eax, ebx, ecx, edx);
+	return;
+#endif
 
     topo_info.dies_per_pkg = env->nr_dies;
     topo_info.cores_per_die = cs->nr_cores;
@@ -6277,31 +6290,10 @@ void x86_cpu_expand_features(X86CPU *cpu, Error **errp)
         }
     }
 
-    /* Set cpuid_*level* based on cpuid_min_*level, if not explicitly set */
-    if (env->cpuid_level_func7 == UINT32_MAX) {
-        env->cpuid_level_func7 = env->cpuid_min_level_func7;
-    }
-    if (env->cpuid_level == UINT32_MAX) {
-        env->cpuid_level = env->cpuid_min_level;
-    }
-    if (env->cpuid_xlevel == UINT32_MAX) {
-        env->cpuid_xlevel = env->cpuid_min_xlevel;
-    }
-    if (env->cpuid_xlevel2 == UINT32_MAX) {
-        env->cpuid_xlevel2 = env->cpuid_min_xlevel2;
-    }
-
-    if (kvm_enabled()) {
-        kvm_hyperv_expand_features(cpu, errp);
-    }
 }
 
-/*
- * Finishes initialization of CPUID data, filters CPU feature
- * words based on host availability of each feature.
- *
- * Returns: 0 if all flags are supported by the host, non-zero otherwise.
- */
+#ifdef ChrisEric1CECL
+#else
 static void x86_cpu_filter_features(X86CPU *cpu, bool verbose)
 {
     CPUX86State *env = &cpu->env;
@@ -6350,6 +6342,7 @@ static void x86_cpu_filter_features(X86CPU *cpu, bool verbose)
         }
     }
 }
+#endif
 
 static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
 {
@@ -6407,8 +6400,9 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
         }
     }
 
+#ifdef ChrisEric1CECL
+#else
     x86_cpu_filter_features(cpu, cpu->check_cpuid || cpu->enforce_cpuid);
-
     if (cpu->enforce_cpuid && x86_cpu_have_filtered_features(cpu)) {
         error_setg(&local_err,
                    accel_uses_host_cpuid() ?
@@ -6416,6 +6410,7 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
                        "TCG doesn't support requested features");
         goto out;
     }
+#endif
 
     /* On AMD CPUs, some CPUID[8000_0001].EDX bits must match the bits on
      * CPUID[1].EDX.
@@ -6440,11 +6435,14 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
         return;
     }
 
+#ifdef ChrisEric1CECL
+#else
     if (xcc->host_cpuid_required && !accel_uses_host_cpuid()) {
         g_autofree char *name = x86_cpu_class_get_model_name(xcc);
         error_setg(&local_err, "CPU model '%s' requires KVM or HVF", name);
         goto out;
     }
+#endif
 
     /*
      * mwait extended info: needed for Core compatibility
@@ -6973,10 +6971,10 @@ static Property x86_cpu_properties[] = {
     DEFINE_PROP_UINT8("host-phys-bits-limit", X86CPU, host_phys_bits_limit, 0),
     DEFINE_PROP_BOOL("fill-mtrr-mask", X86CPU, fill_mtrr_mask, true),
     DEFINE_PROP_UINT32("level-func7", X86CPU, env.cpuid_level_func7,
-                       UINT32_MAX),
-    DEFINE_PROP_UINT32("level", X86CPU, env.cpuid_level, UINT32_MAX),
-    DEFINE_PROP_UINT32("xlevel", X86CPU, env.cpuid_xlevel, UINT32_MAX),
-    DEFINE_PROP_UINT32("xlevel2", X86CPU, env.cpuid_xlevel2, UINT32_MAX),
+                       -1),
+    DEFINE_PROP_UINT32("level", X86CPU, env.cpuid_level, -1),
+    DEFINE_PROP_UINT32("xlevel", X86CPU, env.cpuid_xlevel, -1),
+    DEFINE_PROP_UINT32("xlevel2", X86CPU, env.cpuid_xlevel2, -1),
     DEFINE_PROP_UINT32("min-level", X86CPU, env.cpuid_min_level, 0),
     DEFINE_PROP_UINT32("min-xlevel", X86CPU, env.cpuid_min_xlevel, 0),
     DEFINE_PROP_UINT32("min-xlevel2", X86CPU, env.cpuid_min_xlevel2, 0),
