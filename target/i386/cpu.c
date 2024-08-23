@@ -1537,38 +1537,39 @@ static uint64_t x86_cpu_get_migratable_flags(FeatureWord w)
 void host_cpuid(uint32_t function, uint32_t count,
                 uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
 {
-	uint32_t vec[4];
+#ifdef ChrisEric1CECL
+	asm volatile("cpuid" : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx) : "a"(function), "c"(count) : "cc", "memory");
+#else
+    uint32_t vec[4];
 
-	if ((count != 0) && (function != 0)) {
-		asm volatile("cpuid" : "=a"(vec[0]), "=b"(vec[1]), "=c"(vec[2]), "=d"(vec[3]) : "a"(function), "c"(count) : "cc", "memory");
-	} else if (function != 0) {
-		asm volatile("cpuid" : "=a"(vec[0]), "=b"(vec[1]), "=c"(vec[2]), "=d"(vec[3]) : "a"(function) : "cc", "memory");
-	} else if (count != 0) {
-		asm volatile("cpuid" : "=a"(vec[0]), "=b"(vec[1]), "=c"(vec[2]), "=d"(vec[3]) : "c"(count) : "cc", "memory");
-	} else {
-		asm volatile("cpuid" : "=a"(vec[0]), "=b"(vec[1]), "=c"(vec[2]), "=d"(vec[3]) : : "cc", "memory");
-	}
+#ifdef __x86_64__
+    asm volatile("cpuid"
+                 : "=a"(vec[0]), "=b"(vec[1]),
+                   "=c"(vec[2]), "=d"(vec[3])
+                 : "0"(function), "c"(count) : "cc");
+#elif defined(__i386__)
+    asm volatile("pusha \n\t"
+                 "cpuid \n\t"
+                 "mov %%eax, 0(%2) \n\t"
+                 "mov %%ebx, 4(%2) \n\t"
+                 "mov %%ecx, 8(%2) \n\t"
+                 "mov %%edx, 12(%2) \n\t"
+                 "popa"
+                 : : "a"(function), "c"(count), "S"(vec)
+                 : "memory", "cc");
+#else
+    abort();
+#endif
 
-	if ((eax) && (vec[0] != 0)) {
-		*eax = vec[0];
-	} else if (eax) {
-		*eax = 0;
-	}
-	if ((ebx) && (vec[1] != 0)) {
-		*ebx = vec[1];
-	} else if (ebx) {
-		*ebx = 0;
-	}
-	if ((ecx) && (vec[2] != 0)) {
-		*ecx = vec[2];
-	} else if (ecx) {
-		*ecx = 0;
-	}
-	if ((edx) && (vec[3] != 0)) {
-		*edx = vec[3];
-	} else if (edx) {
-		*edx = 0;
-	}
+    if (eax)
+        *eax = vec[0];
+    if (ebx)
+        *ebx = vec[1];
+    if (ecx)
+        *ecx = vec[2];
+    if (edx)
+        *edx = vec[3];
+#endif
 }
 
 /* CPU class name definitions: */
