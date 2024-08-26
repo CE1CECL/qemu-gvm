@@ -919,9 +919,9 @@ if(nid==0xf&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb05);retur
             break;
         }
         if (data & AC_AMP_GET_LEFT) {
-            hda_codec_response(hda, true, ((st->mute_left ? AC_AMP_MUTE : 0) | (st->mute_left ? 0 : st->gain_left)));
+            hda_codec_response(hda, true, (st->mute_left ? 0x80 : st->gain_left));
         } else {
-            hda_codec_response(hda, true, ((st->mute_right ? AC_AMP_MUTE : 0) | (st->mute_right ? 0 : st->gain_right)));
+            hda_codec_response(hda, true, (st->mute_right ? 0x80 : st->gain_right));
         }
         break;
  // case AC_VERB_SET_AMP_GAIN_MUTE:
