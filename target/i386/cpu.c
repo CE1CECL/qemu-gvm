@@ -625,7 +625,7 @@ void x86_cpu_vendor_words2str(char *dst, uint32_t vendor1,
           CPUID_EXT_MONITOR | CPUID_EXT_SSSE3 | CPUID_EXT_CX16 | \
           CPUID_EXT_SSE41 | CPUID_EXT_SSE42 | CPUID_EXT_POPCNT | \
           CPUID_EXT_XSAVE | /* CPUID_EXT_OSXSAVE is dynamic */   \
-          CPUID_EXT_MOVBE | CPUID_EXT_AES | CPUID_EXT_HYPERVISOR | \
+          CPUID_EXT_MOVBE | CPUID_EXT_AES | \
           CPUID_EXT_RDRAND)
           /* missing:
           CPUID_EXT_DTES64, CPUID_EXT_DSCPL, CPUID_EXT_VMX, CPUID_EXT_SMX,
@@ -1534,32 +1534,23 @@ static uint64_t x86_cpu_get_migratable_flags(FeatureWord w)
     return r;
 }
 
-void host_cpuid(uint32_t function, uint32_t count,
-                uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
+void host_cpuid(uint32_t function, uint32_t count, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
 {
 	uint32_t vec[4];
 
 	asm volatile("cpuid" : "=a"(vec[0]), "=b"(vec[1]), "=c"(vec[2]), "=d"(vec[3]) : "a"(function), "c"(count) : "cc", "memory");
 
-	if ((eax) && (vec[0] != 0)) {
+	if (eax) {
 		*eax = vec[0];
-	} else if (eax) {
-		*eax = 0;
 	}
-	if ((ebx) && (vec[1] != 0)) {
+	if (ebx) {
 		*ebx = vec[1];
-	} else if (ebx) {
-		*ebx = 0;
 	}
-	if ((ecx) && (vec[2] != 0)) {
+	if (ecx) {
 		*ecx = vec[2];
-	} else if (ecx) {
-		*ecx = 0;
 	}
-	if ((edx) && (vec[3] != 0)) {
+	if (edx) {
 		*edx = vec[3];
-	} else if (edx) {
-		*edx = 0;
 	}
 }
 
@@ -4736,10 +4727,7 @@ static void x86_cpu_class_check_missing_features(X86CPUClass *xcc,
         error_free(err);
     }
 
-if (tcg_enabled()) {
-} else {
     x86_cpu_filter_features(xc, false);
-}
 
     x86_cpu_list_feature_names(xc->filtered_features, tail);
 
@@ -5218,10 +5206,12 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
     uint32_t limit;
     X86CPUTopoInfo topo_info;
 
-if (tcg_enabled()) {
-	host_cpuid(index, count, eax, ebx, ecx, edx);
-	return;
-}
+    #if 0
+    if (tcg_enabled()) {
+        host_cpuid(index, count, eax, ebx, ecx, edx);
+        return;
+    }
+    #endif
 
     topo_info.dies_per_pkg = env->nr_dies;
     topo_info.cores_per_die = cs->nr_cores;
@@ -5855,7 +5845,12 @@ if (tcg_enabled()) {
         }
         break;
     default:
-        /* reserved values: zero */
+        #if 1
+        if (tcg_enabled()) {
+                host_cpuid(index, count, eax, ebx, ecx, edx);
+                break;
+        }
+        #endif
         *eax = 0;
         *ebx = 0;
         *ecx = 0;
@@ -6275,6 +6270,19 @@ void x86_cpu_expand_features(X86CPU *cpu, Error **errp)
         }
     }
 
+    /* Set cpuid_*level* based on cpuid_min_*level, if not explicitly set */
+    if (env->cpuid_level_func7 == UINT32_MAX) {
+        env->cpuid_level_func7 = env->cpuid_min_level_func7;
+    }
+    if (env->cpuid_level == UINT32_MAX) {
+        env->cpuid_level = env->cpuid_min_level;
+    }
+    if (env->cpuid_xlevel == UINT32_MAX) {
+        env->cpuid_xlevel = env->cpuid_min_xlevel;
+    }
+    if (env->cpuid_xlevel2 == UINT32_MAX) {
+        env->cpuid_xlevel2 = env->cpuid_min_xlevel2;
+    }
 }
 
 
@@ -6383,8 +6391,6 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
         }
     }
 
-if (tcg_enabled()) {
-} else {
     x86_cpu_filter_features(cpu, cpu->check_cpuid || cpu->enforce_cpuid);
     if (cpu->enforce_cpuid && x86_cpu_have_filtered_features(cpu)) {
         error_setg(&local_err,
@@ -6393,7 +6399,6 @@ if (tcg_enabled()) {
                        "TCG doesn't support requested features");
         goto out;
     }
-}
 
     /* On AMD CPUs, some CPUID[8000_0001].EDX bits must match the bits on
      * CPUID[1].EDX.
@@ -6417,15 +6422,6 @@ if (tcg_enabled()) {
         error_propagate(errp, local_err);
         return;
     }
-
-if (tcg_enabled()) {
-} else {
-    if (xcc->host_cpuid_required && !accel_uses_host_cpuid()) {
-        g_autofree char *name = x86_cpu_class_get_model_name(xcc);
-        error_setg(&local_err, "CPU model '%s' requires KVM or HVF", name);
-        goto out;
-    }
-}
 
     /*
      * mwait extended info: needed for Core compatibility
@@ -6954,10 +6950,10 @@ static Property x86_cpu_properties[] = {
     DEFINE_PROP_UINT8("host-phys-bits-limit", X86CPU, host_phys_bits_limit, 0),
     DEFINE_PROP_BOOL("fill-mtrr-mask", X86CPU, fill_mtrr_mask, true),
     DEFINE_PROP_UINT32("level-func7", X86CPU, env.cpuid_level_func7,
-                       -1),
-    DEFINE_PROP_UINT32("level", X86CPU, env.cpuid_level, -1),
-    DEFINE_PROP_UINT32("xlevel", X86CPU, env.cpuid_xlevel, -1),
-    DEFINE_PROP_UINT32("xlevel2", X86CPU, env.cpuid_xlevel2, -1),
+                       UINT32_MAX),
+    DEFINE_PROP_UINT32("level", X86CPU, env.cpuid_level, UINT32_MAX),
+    DEFINE_PROP_UINT32("xlevel", X86CPU, env.cpuid_xlevel, UINT32_MAX),
+    DEFINE_PROP_UINT32("xlevel2", X86CPU, env.cpuid_xlevel2, UINT32_MAX),
     DEFINE_PROP_UINT32("min-level", X86CPU, env.cpuid_min_level, 0),
     DEFINE_PROP_UINT32("min-xlevel", X86CPU, env.cpuid_min_xlevel, 0),
     DEFINE_PROP_UINT32("min-xlevel2", X86CPU, env.cpuid_min_xlevel2, 0),

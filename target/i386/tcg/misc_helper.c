@@ -63,12 +63,30 @@ void helper_cpuid(CPUX86State *env)
 
 void helper_rdtsc(CPUX86State *env)
 {
-	asm volatile("rdtsc" : "=a"(env->regs[R_EAX]), "=b"(env->regs[R_EBX]), "=c"(env->regs[R_ECX]), "=d"(env->regs[R_EDX]) : "a"(env->regs[R_EAX]), "b"(env->regs[R_EBX]), "c"(env->regs[R_ECX]), "d"(env->regs[R_EDX]) : "cc", "memory");
+    uint64_t val;
+
+    if ((env->cr[4] & CR4_TSD_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
+        raise_exception_ra(env, EXCP0D_GPF, GETPC());
+    }
+    cpu_svm_check_intercept_param(env, SVM_EXIT_RDTSC, 0, GETPC());
+
+    asm volatile("rdtsc" : "=a"(val) : : "cc", "memory");
+    env->regs[R_EAX] = (uint32_t)(val);
+    env->regs[R_EDX] = (uint32_t)(val >> 32);
 }
 
 void helper_rdtscp(CPUX86State *env)
 {
-	asm volatile("rdtscp" : "=a"(env->regs[R_EAX]), "=b"(env->regs[R_EBX]), "=c"(env->regs[R_ECX]), "=d"(env->regs[R_EDX]) : "a"(env->regs[R_EAX]), "b"(env->regs[R_EBX]), "c"(env->regs[R_ECX]), "d"(env->regs[R_EDX]) : "cc", "memory");
+    uint64_t val;
+
+    if ((env->cr[4] & CR4_TSD_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
+        raise_exception_ra(env, EXCP0D_GPF, GETPC());
+    }
+    cpu_svm_check_intercept_param(env, SVM_EXIT_RDTSC, 0, GETPC());
+
+    asm volatile("rdtscp" : "=a"(val) : : "cc", "memory");
+    env->regs[R_EAX] = (uint32_t)(val);
+    env->regs[R_EDX] = (uint32_t)(val >> 32);
 }
 
 G_NORETURN void helper_rdpmc(CPUX86State *env)

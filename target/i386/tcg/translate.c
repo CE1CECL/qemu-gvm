@@ -7281,13 +7281,31 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         }
         break;
     case 0x130: /* wrmsr */
-        gen_helper_wrmsr(cpu_env);
+        if (check_cpl0(s)) {
+            gen_update_cc_op(s);
+            gen_jmp_im(s, pc_start - s->cs_base);
+            gen_helper_wrmsr(cpu_env);
+            gen_jmp_im(s, s->pc - s->cs_base);
+            gen_eob(s);
+        }
         break;
     case 0x132: /* rdmsr */
-        gen_helper_rdmsr(cpu_env);
+        if (check_cpl0(s)) {
+            gen_update_cc_op(s);
+            gen_jmp_im(s, pc_start - s->cs_base);
+            gen_helper_rdmsr(cpu_env);
+        }
         break;
     case 0x131: /* rdtsc */
+        gen_update_cc_op(s);
+        gen_jmp_im(s, pc_start - s->cs_base);
+        if (tb_cflags(s->base.tb) & CF_USE_ICOUNT) {
+            gen_io_start();
+        }
         gen_helper_rdtsc(cpu_env);
+        if (tb_cflags(s->base.tb) & CF_USE_ICOUNT) {
+            gen_jmp(s, s->pc - s->cs_base);
+        }
         break;
     case 0x133: /* rdpmc */
         gen_update_cc_op(s);
@@ -7346,6 +7364,8 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         break;
 #endif
     case 0x1a2: /* cpuid */
+        gen_update_cc_op(s);
+        gen_jmp_im(s, pc_start - s->cs_base);
         gen_helper_cpuid(cpu_env);
         break;
     case 0xf4: /* hlt */
@@ -7741,7 +7761,15 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
 #endif
             goto illegal_op;
         case 0xf9: /* rdtscp */
+            gen_update_cc_op(s);
+            gen_jmp_im(s, pc_start - s->cs_base);
+            if (tb_cflags(s->base.tb) & CF_USE_ICOUNT) {
+                gen_io_start();
+            }
             gen_helper_rdtscp(cpu_env);
+            if (tb_cflags(s->base.tb) & CF_USE_ICOUNT) {
+                gen_jmp(s, s->pc - s->cs_base);
+            }
             break;
         default:
             goto unknown_op;
