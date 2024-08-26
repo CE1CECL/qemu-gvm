@@ -67,7 +67,6 @@ uint32_t hvf_get_supported_cpuid(uint32_t func, uint32_t idx,
              CPUID_EXT_SSE41 | CPUID_EXT_SSE42 | CPUID_EXT_MOVBE |
              CPUID_EXT_POPCNT | CPUID_EXT_AES | CPUID_EXT_XSAVE |
              CPUID_EXT_AVX | CPUID_EXT_F16C | CPUID_EXT_RDRAND;
-        ecx |= CPUID_EXT_HYPERVISOR;
         break;
     case 6:
         eax = CPUID_6_EAX_ARAT;
