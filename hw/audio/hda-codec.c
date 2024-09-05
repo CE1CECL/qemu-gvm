@@ -149,7 +149,9 @@ struct HDAAudioStream {
     uint32_t channel;
     uint32_t format;
     uint32_t gain_left, gain_right;
+    uint32_t left_gain, right_gain;
     bool mute_left, mute_right;
+    bool left_mute, right_mute;
     struct audsettings as;
     union {
         SWVoiceIn *in;
@@ -437,20 +439,29 @@ static void hda_audio_set_amp(HDAAudioStream *st)
         return;
     }
 
-    muted = st->mute_left && st->mute_right;
-    left  = st->gain_left;
-    right = st->gain_right;
-
-    left = left * 255 / 74;
-    right = right * 255 / 74;
+    if (st->out == true) {
+        muted = st->mute_left && st->mute_right;
+        left  = st->gain_left;
+        right = st->gain_right;
+        left = left * 255 / 74;
+        right = right * 255 / 74;
+    } else if (st->in == true) {
+        muted = st->left_mute && st->right_mute;
+        left  = st->left_gain;
+        right = st->right_gain;
+        left = left * 255 / 74;
+        right = right * 255 / 74;
+    } else {
+        return;
+    }
 
     if (!st->state->mixer) {
         return;
     }
-    if (st->out && st->output) {
+    if ((st->out == true) && (st->output)) {
         AUD_set_volume_out(st->voice.out, muted, left, right);
     }
-    if (st->in && st->input) {
+    if ((st->in == true) && (st->input)) {
         AUD_set_volume_in(st->voice.in, muted, left, right);
     }
 }
@@ -639,7 +650,7 @@ if(nid==0xf&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb05);retur
         st->input = false;
         if (node->stindex == 1) {
             st->input = true;
-        } else {
+        } else if (node->stindex == 0) {
             st->output = true;
         }
         hda_codec_parse_fmt(st->format, &st->as);
@@ -918,10 +929,18 @@ if(nid==0xf&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb05);retur
             dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
-        if (data & AC_AMP_GET_LEFT) {
-            hda_codec_response(hda, true, (st->mute_left ? 0x80 : st->gain_left));
-        } else {
-            hda_codec_response(hda, true, (st->mute_right ? 0x80 : st->gain_right));
+        if (data & AC_AMP_GET_INPUT) {
+                if (data & AC_AMP_GET_LEFT) {
+                    hda_codec_response(hda, true, ((st->left_gain) | (st->left_mute ? AC_AMP_MUTE : 0)));
+                } else if (data & AC_AMP_GET_RIGHT) {
+                    hda_codec_response(hda, true, ((st->right_gain) | (st->right_mute ? AC_AMP_MUTE : 0)));
+                }
+        } else if (data & AC_AMP_GET_OUTPUT) {
+                if (data & AC_AMP_GET_LEFT) {
+                    hda_codec_response(hda, true, ((st->gain_left) | (st->mute_left ? AC_AMP_MUTE : 0)));
+                } else if (data & AC_AMP_GET_RIGHT) {
+                    hda_codec_response(hda, true, ((st->gain_right) | (st->mute_right ? AC_AMP_MUTE : 0)));
+                }
         }
         break;
  // case AC_VERB_SET_AMP_GAIN_MUTE:
@@ -1182,15 +1201,14 @@ if(nid==0xf&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb05);retur
     case 1022:
     case 1023:
         st = a->st + node->stindex;
-        if (st->node == NULL) {
+        // CECL Self-Note: VoodooHDA.kext sends amp gains of 0x0, even after changing the volume to no matter what percentage in Mac OS X, Disable it for now, it isn't a clean idea, but one that prevents rebooting a VM after touching it knowingly or not.
+        if ((st->node == NULL) || (payload == 0x0)) {
             hda_codec_response(hda, true, 0x0);
             dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
         st->in = false;
         st->out = false;
-        st->mute_left = false;
-        st->mute_right = false;
         dprint(a, 1, "amp (%s): %s%s%s%s gain %3d %s\n",
                st->node->name,
                (data & AC_AMP_SET_OUTPUT) ? "o" : "-",
@@ -1199,19 +1217,26 @@ if(nid==0xf&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb05);retur
                (data & AC_AMP_SET_RIGHT)  ? "r" : "-",
                (data & AC_AMP_GAIN),
                ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE)) ? "muted" : "");
-        if (data & AC_AMP_SET_LEFT) {
-            st->gain_left = data & AC_AMP_GAIN;
-            st->mute_left = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
-        }
-        if (data & AC_AMP_SET_RIGHT) {
-            st->gain_right = data & AC_AMP_GAIN;
-            st->mute_right = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
-        }
-        if (data & AC_AMP_SET_OUTPUT) {
-            st->out = true;
-        }
         if (data & AC_AMP_SET_INPUT) {
-            st->in = true;
+                if (data & AC_AMP_SET_LEFT) {
+                    st->in = true;
+                    st->left_gain = data & AC_AMP_GAIN;
+                    st->left_mute = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
+                } else if (data & AC_AMP_SET_RIGHT) {
+                    st->in = true;
+                    st->right_gain = data & AC_AMP_GAIN;
+                    st->right_mute = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
+                }
+        } else if (data & AC_AMP_SET_OUTPUT) {
+                if (data & AC_AMP_SET_LEFT) {
+                    st->out = true;
+                    st->gain_left = data & AC_AMP_GAIN;
+                    st->mute_left = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
+                } else if (data & AC_AMP_SET_RIGHT) {
+                    st->out = true;
+                    st->gain_right = data & AC_AMP_GAIN;
+                    st->mute_right = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
+                }
         }
         hda_audio_set_amp(st);
         hda_codec_response(hda, true, 0x0);
@@ -1378,8 +1403,12 @@ static const VMStateDescription vmstate_hda_audio_stream = {
         VMSTATE_UINT32(format, HDAAudioStream),
         VMSTATE_UINT32(gain_left, HDAAudioStream),
         VMSTATE_UINT32(gain_right, HDAAudioStream),
+        VMSTATE_UINT32(left_gain, HDAAudioStream),
+        VMSTATE_UINT32(right_gain, HDAAudioStream),
         VMSTATE_BOOL(mute_left, HDAAudioStream),
         VMSTATE_BOOL(mute_right, HDAAudioStream),
+        VMSTATE_BOOL(left_mute, HDAAudioStream),
+        VMSTATE_BOOL(right_mute, HDAAudioStream),
         VMSTATE_UINT32(compat_bpos, HDAAudioStream),
         VMSTATE_BUFFER(compat_buf, HDAAudioStream),
         VMSTATE_END_OF_LIST()
