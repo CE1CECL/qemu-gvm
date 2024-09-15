@@ -142,7 +142,7 @@ void helper_wrmsr(CPUX86State *env)
     uint64_t val;
     CPUState *cs = env_cpu(env);
     int df;
-    uint32_t lav;
+    uint64_t lav;
     val = ((uint32_t)env->regs[R_EAX]) | ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
     switch ((uint32_t)env->regs[R_ECX]) {
     case MSR_IA32_SYSENTER_CS:
@@ -196,7 +196,6 @@ void helper_wrmsr(CPUX86State *env)
     case MSR_VM_HSAVE_PA:
         env->vm_hsave = val;
         break;
-#ifdef TARGET_X86_64
     case MSR_LSTAR:
         env->lstar = val;
         break;
@@ -215,7 +214,6 @@ void helper_wrmsr(CPUX86State *env)
     case MSR_KERNELGSBASE:
         env->kernelgsbase = val;
         break;
-#endif
     case MSR_MTRRphysBase(0):
     case MSR_MTRRphysBase(1):
     case MSR_MTRRphysBase(2):
@@ -280,15 +278,14 @@ void helper_wrmsr(CPUX86State *env)
             break;
         }
 	df = open("/dev/cpu/0/msr", O_WRONLY);
-	if ((uint32_t)env->regs[R_ECX] >= 0x4b564d00 && (uint32_t)env->regs[R_ECX] <= 0x4b564dff) {
+	lav = ((uint32_t)env->regs[R_EAX]) | ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
+	if ((pwrite(df, &lav, sizeof(lav), (uint32_t)env->regs[R_ECX])) != (sizeof lav)) {
 		val = 0;
 		close(df);
 		lav = 0;
 		raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
 		break;
 	}
-	lav = ((uint32_t)env->regs[R_EAX]) | ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
-	pwrite(df, &lav, sizeof(lav), (uint32_t)env->regs[R_ECX]);
 	val = 0;
 	close(df);
 	lav = 0;
@@ -302,7 +299,7 @@ void helper_rdmsr(CPUX86State *env)
     X86CPU *x86_cpu = env_archcpu(env);
     uint64_t val;
     int df;
-    uint32_t lav;
+    uint64_t lav;
     bool zero = true;
     switch ((uint32_t)env->regs[R_ECX]) {
     case MSR_IA32_SYSENTER_ESP:
@@ -329,7 +326,6 @@ void helper_rdmsr(CPUX86State *env)
     case MSR_VM_HSAVE_PA:
         val = env->vm_hsave;
         break;
-#ifdef TARGET_X86_64
     case MSR_LSTAR:
         val = env->lstar;
         break;
@@ -348,7 +344,6 @@ void helper_rdmsr(CPUX86State *env)
     case MSR_KERNELGSBASE:
         val = env->kernelgsbase;
         break;
-#endif
     case MSR_SMI_COUNT:
         val = env->msr_smi_count;
         break;
@@ -420,7 +415,8 @@ void helper_rdmsr(CPUX86State *env)
             break;
         }
 	df = open("/dev/cpu/0/msr", O_RDONLY);
-	if ((uint32_t)env->regs[R_ECX] >= 0x4b564d00 && (uint32_t)env->regs[R_ECX] <= 0x4b564dff) {
+	lav = ((uint32_t)env->regs[R_EAX]) | ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
+	if ((pread(df, &lav, sizeof(lav), (uint32_t)env->regs[R_ECX])) != (sizeof lav)) {
 		zero = false;
 		val = 0;
 		close(df);
@@ -428,14 +424,12 @@ void helper_rdmsr(CPUX86State *env)
 		raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
 		break;
 	}
-	lav = ((uint32_t)env->regs[R_EAX]) | ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
-	pread(df, &lav, sizeof(lav), (uint32_t)env->regs[R_ECX]);
 	val = lav;
 	close(df);
 	lav = 0;
 	break;
     }
-    if ((val != 0) || (zero == true)) {
+    if (zero == true) {
 	env->regs[R_EAX] = (uint32_t)(val);
 	env->regs[R_EDX] = (uint32_t)(val >> 32);
 	zero = false;
