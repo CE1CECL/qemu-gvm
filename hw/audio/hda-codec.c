@@ -925,23 +925,40 @@ if(nid==0xf&&verb==0xf02&&payload==0x0){hda_codec_response(hda,true,0xb05);retur
     case 3071:
         st = a->st + node->stindex;
         if (st->node == NULL) {
-            hda_codec_response(hda, true, 0x0);
-            dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
-            break;
-        }
-        if (data & AC_AMP_GET_INPUT) {
+                hda_codec_response(hda, true, 0x0);
+                dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
+                break;
+        } else if (data & AC_AMP_GET_INPUT) {
                 if (data & AC_AMP_GET_LEFT) {
                     hda_codec_response(hda, true, ((st->left_gain) | (st->left_mute ? AC_AMP_MUTE : 0)));
+					break;
                 } else if (data & AC_AMP_GET_RIGHT) {
                     hda_codec_response(hda, true, ((st->right_gain) | (st->right_mute ? AC_AMP_MUTE : 0)));
-                }
+					break;
+                } else {
+					hda_codec_response(hda, true, 0x0);
+					dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
+					break;
+				}
+				break;
         } else if (data & AC_AMP_GET_OUTPUT) {
                 if (data & AC_AMP_GET_LEFT) {
                     hda_codec_response(hda, true, ((st->gain_left) | (st->mute_left ? AC_AMP_MUTE : 0)));
+					break;
                 } else if (data & AC_AMP_GET_RIGHT) {
                     hda_codec_response(hda, true, ((st->gain_right) | (st->mute_right ? AC_AMP_MUTE : 0)));
-                }
-        }
+					break;
+                } else {
+					hda_codec_response(hda, true, 0x0);
+					dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
+					break;
+				}
+				break;
+        } else {
+                hda_codec_response(hda, true, 0x0);
+                dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
+                break;
+		}
         break;
  // case AC_VERB_SET_AMP_GAIN_MUTE:
     case 768:
