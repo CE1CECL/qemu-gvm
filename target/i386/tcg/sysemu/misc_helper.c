@@ -277,21 +277,33 @@ void helper_wrmsr(CPUX86State *env)
             }
             break;
         }
-	df = open("/dev/cpu/0/msr", O_WRONLY);
-	lav = ((uint32_t)env->regs[R_EAX]) | ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
-	if ((pwrite(df, &lav, sizeof(lav), (uint32_t)env->regs[R_ECX])) != (sizeof lav)) {
+		df = open("/dev/cpu/0/msr", O_WRONLY);
+		if ((df) < (0)) {
+			val = 0;
+			lav = 0;
+			break;
+		}
+		lav = ((uint32_t)env->regs[R_EAX]) | ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
+		if ((lseek(df, (uint32_t)env->regs[R_ECX], SEEK_SET)) < (0)) {
+			val = 0;
+			close(df);
+			lav = 0;
+			raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
+			break;
+		}
+		if ((write(df, &lav, sizeof(lav))) != (sizeof lav)) {
+			val = 0;
+			close(df);
+			lav = 0;
+			raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
+			break;
+		}
 		val = 0;
 		close(df);
 		lav = 0;
-		raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
 		break;
 	}
-	val = 0;
-	close(df);
-	lav = 0;
-	break;
-    }
-    return;
+	return;
 }
 
 void helper_rdmsr(CPUX86State *env)
@@ -414,30 +426,43 @@ void helper_rdmsr(CPUX86State *env)
             val = env->mce_banks[offset];
             break;
         }
-	df = open("/dev/cpu/0/msr", O_RDONLY);
-	lav = ((uint32_t)env->regs[R_EAX]) | ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
-	if ((pread(df, &lav, sizeof(lav), (uint32_t)env->regs[R_ECX])) != (sizeof lav)) {
-		zero = false;
-		val = 0;
+		df = open("/dev/cpu/0/msr", O_RDONLY);
+		if ((df) < (0)) {
+			val = 0;
+			lav = 0;
+			break;
+		}
+		lav = ((uint32_t)env->regs[R_EAX]) | ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
+		if ((lseek(df, (uint32_t)env->regs[R_ECX], SEEK_SET)) < (0)) {
+			zero = false;
+			val = 0;
+			close(df);
+			lav = 0;
+			raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
+			break;
+		}
+		if ((read(df, &lav, sizeof(lav))) != (sizeof lav)) {
+			zero = false;
+			val = 0;
+			close(df);
+			lav = 0;
+			raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
+			break;
+		}
+		val = lav;
 		close(df);
 		lav = 0;
-		raise_exception_err_ra(env, EXCP0D_GPF, 0, GETPC());
 		break;
 	}
-	val = lav;
-	close(df);
-	lav = 0;
-	break;
-    }
-    if (zero == true) {
-	env->regs[R_EAX] = (uint32_t)(val);
-	env->regs[R_EDX] = (uint32_t)(val >> 32);
-	zero = false;
-	val = 0;
-    } else {
-	zero = false;
-	val = 0;
-    }
+	if (zero == true) {
+		env->regs[R_EAX] = (uint32_t)(val);
+		env->regs[R_EDX] = (uint32_t)(val >> 32);
+		zero = false;
+		val = 0;
+	} else {
+		zero = false;
+		val = 0;
+	}
 }
 
 void helper_flush_page(CPUX86State *env, target_ulong addr)
