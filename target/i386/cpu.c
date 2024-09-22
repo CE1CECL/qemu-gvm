@@ -5854,13 +5854,13 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         #if 1
         if (tcg_enabled()) {
                 host_cpuid(index, count, eax, ebx, ecx, edx);
-                break;
         }
-        #endif
+        #else
         *eax = 0;
         *ebx = 0;
         *ecx = 0;
         *edx = 0;
+        #endif
         break;
     }
 }
