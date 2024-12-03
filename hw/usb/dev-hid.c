@@ -807,7 +807,8 @@ static void usb_tablet_class_initfn(ObjectClass *klass, void *data)
 
     uc->realize        = usb_tablet_realize;
     uc->product_desc   = "2007 USB Tablet";
-    dc->vmsd = &vmstate_usb_ptr;
+    dc->vmsd           = &vmstate_usb_ptr;
+    dc->hotpluggable   = true;
     device_class_set_props(dc, usb_tablet_properties);
     set_bit(DEVICE_CATEGORY_INPUT, dc->categories);
 }
@@ -830,7 +831,8 @@ static void usb_mouse_class_initfn(ObjectClass *klass, void *data)
 
     uc->realize        = usb_mouse_realize;
     uc->product_desc   = "2007 USB Mouse";
-    dc->vmsd = &vmstate_usb_ptr;
+    dc->vmsd           = &vmstate_usb_ptr;
+    dc->hotpluggable   = true;
     device_class_set_props(dc, usb_mouse_properties);
     set_bit(DEVICE_CATEGORY_INPUT, dc->categories);
 }
@@ -854,7 +856,8 @@ static void usb_keyboard_class_initfn(ObjectClass *klass, void *data)
 
     uc->realize        = usb_keyboard_realize;
     uc->product_desc   = "2007 USB Keyboard";
-    dc->vmsd = &vmstate_usb_kbd;
+    dc->vmsd           = &vmstate_usb_kbd;
+    dc->hotpluggable   = true;
     device_class_set_props(dc, usb_keyboard_properties);
     set_bit(DEVICE_CATEGORY_INPUT, dc->categories);
 }
