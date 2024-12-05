@@ -93,6 +93,7 @@ static void pc_init1(MachineState *machine,
     ram_addr_t lowmem;
     uint64_t hole64_size;
     DeviceState *i440fx_host;
+    MachineClass *mc = MACHINE_GET_CLASS(machine);
 
     /*
      * Calculate ram split, for memory below and above 4G.  It's a bit
@@ -248,7 +249,7 @@ static void pc_init1(MachineState *machine,
     }
 
     /* init basic PC hardware */
-    pc_basic_device_init(pcms, isa_bus, x86ms->gsi, &rtc_state, true,
+    pc_basic_device_init(pcms, isa_bus, x86ms->gsi, &rtc_state, !mc->no_floppy,
                          0x4);
 
     pc_nic_init(pcmc, isa_bus, pci_bus);
@@ -426,7 +427,8 @@ static void pc_i440fx_machine_options(MachineClass *m)
     m->family = "pc_piix";
     m->desc = "Standard PC (i440FX + PIIX, 1996)";
     m->default_machine_opts = "firmware=bios-256k.bin";
-    m->default_display = "std";
+    m->default_display = "vmware";
+    m->no_floppy = 1;
     machine_class_allow_dynamic_sysbus_dev(m, TYPE_RAMFB_DEVICE);
     machine_class_allow_dynamic_sysbus_dev(m, TYPE_VMBUS_BRIDGE);
 }
