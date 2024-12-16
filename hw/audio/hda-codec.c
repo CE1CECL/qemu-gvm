@@ -983,8 +983,7 @@ if(((nid==0x14)||(nid==0x15)||(nid==0x16)||(nid==0x17)||(nid==0x18)||(nid==0x19)
                     hda_codec_response(hda, true, ((st->right_gain) | (st->right_mute ? AC_AMP_MUTE : 0)));
 					break;
                 } else {
-					hda_codec_response(hda, true, 0x0);
-					dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
+                    hda_codec_response(hda, true, ((st->right_gain) | (st->right_mute ? AC_AMP_MUTE : 0)));
 					break;
 				}
 				break;
@@ -996,15 +995,22 @@ if(((nid==0x14)||(nid==0x15)||(nid==0x16)||(nid==0x17)||(nid==0x18)||(nid==0x19)
                     hda_codec_response(hda, true, ((st->gain_right) | (st->mute_right ? AC_AMP_MUTE : 0)));
 					break;
                 } else {
-					hda_codec_response(hda, true, 0x0);
-					dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
+                    hda_codec_response(hda, true, ((st->gain_right) | (st->mute_right ? AC_AMP_MUTE : 0)));
 					break;
 				}
 				break;
         } else {
-                hda_codec_response(hda, true, 0x0);
-                dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
-                break;
+                if (data & AC_AMP_GET_LEFT) {
+                    hda_codec_response(hda, true, ((st->left_gain) | (st->left_mute ? AC_AMP_MUTE : 0)));
+					break;
+                } else if (data & AC_AMP_GET_RIGHT) {
+                    hda_codec_response(hda, true, ((st->right_gain) | (st->right_mute ? AC_AMP_MUTE : 0)));
+					break;
+                } else {
+                    hda_codec_response(hda, true, ((st->right_gain) | (st->right_mute ? AC_AMP_MUTE : 0)));
+					break;
+				}
+				break;
 		}
         break;
  // case AC_VERB_SET_AMP_GAIN_MUTE:
@@ -1266,7 +1272,7 @@ if(((nid==0x14)||(nid==0x15)||(nid==0x16)||(nid==0x17)||(nid==0x18)||(nid==0x19)
     case 1023:
         st = a->st + node->stindex;
         // CECL Self-Note: VoodooHDA.kext sends amp gains of 0x0, even after changing the volume to no matter what percentage in Mac OS X, Disable it for now, it isn't a clean idea, but one that prevents rebooting a VM after touching it knowingly or not.
-        if ((st->node == NULL) || (payload == 0x0)) {
+        if ((1) && ((st->node == NULL) || (payload == 0x0))) {
             hda_codec_response(hda, true, 0x0);
             dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
@@ -1290,6 +1296,10 @@ if(((nid==0x14)||(nid==0x15)||(nid==0x16)||(nid==0x17)||(nid==0x18)||(nid==0x19)
                     st->in = true;
                     st->right_gain = data & AC_AMP_GAIN;
                     st->right_mute = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
+                } else {
+                    st->in = true;
+                    st->right_gain = data & AC_AMP_GAIN;
+                    st->right_mute = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
                 }
         } else if (data & AC_AMP_SET_OUTPUT) {
                 if (data & AC_AMP_SET_LEFT) {
@@ -1300,6 +1310,24 @@ if(((nid==0x14)||(nid==0x15)||(nid==0x16)||(nid==0x17)||(nid==0x18)||(nid==0x19)
                     st->out = true;
                     st->gain_right = data & AC_AMP_GAIN;
                     st->mute_right = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
+                } else {
+                    st->out = true;
+                    st->gain_right = data & AC_AMP_GAIN;
+                    st->mute_right = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
+                }
+        } else {
+                if (data & AC_AMP_SET_LEFT) {
+                    st->in = true;
+                    st->left_gain = data & AC_AMP_GAIN;
+                    st->left_mute = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
+                } else if (data & AC_AMP_SET_RIGHT) {
+                    st->in = true;
+                    st->right_gain = data & AC_AMP_GAIN;
+                    st->right_mute = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
+                } else {
+                    st->in = true;
+                    st->right_gain = data & AC_AMP_GAIN;
+                    st->right_mute = ((payload & AC_AMP_MUTE) && (data & AC_AMP_MUTE));
                 }
         }
         hda_audio_set_amp(st);
