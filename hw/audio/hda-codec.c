@@ -514,6 +514,7 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid, uint32_t data)
 
     node = hda_codec_find_node(a->desc, nid);
     if (node == NULL) {
+        hda_codec_response(hda, true, 0x0);
         dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
         return;
     }
@@ -1937,6 +1938,7 @@ if(nid==27&&verb==0xf34&&payload==15){hda_codec_response(hda,true,0xf);return;};
     case AC_VERB_PARAMETERS:
         st = a->st + node->stindex;
         if (st->node == NULL) {
+            hda_codec_response(hda, true, 0x0);
             dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
@@ -1951,6 +1953,7 @@ if(nid==27&&verb==0xf34&&payload==15){hda_codec_response(hda,true,0xf);return;};
     case AC_VERB_SET_CHANNEL_STREAMID:
         st = a->st + node->stindex;
         if (st->node == NULL) {
+            hda_codec_response(hda, true, 0x0);
             dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
@@ -1964,6 +1967,7 @@ if(nid==27&&verb==0xf34&&payload==15){hda_codec_response(hda,true,0xf);return;};
     case AC_VERB_GET_CONV:
         st = a->st + node->stindex;
         if (st->node == NULL) {
+            hda_codec_response(hda, true, 0x0);
             dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
@@ -1972,6 +1976,7 @@ if(nid==27&&verb==0xf34&&payload==15){hda_codec_response(hda,true,0xf);return;};
     case AC_VERB_SET_STREAM_FORMAT:
         st = a->st + node->stindex;
         if (st->node == NULL) {
+            hda_codec_response(hda, true, 0x0);
             dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
@@ -1990,6 +1995,7 @@ if(nid==27&&verb==0xf34&&payload==15){hda_codec_response(hda,true,0xf);return;};
     case AC_VERB_GET_STREAM_FORMAT:
         st = a->st + node->stindex;
         if (st->node == NULL) {
+            hda_codec_response(hda, true, 0x0);
             dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
@@ -2254,6 +2260,7 @@ if(nid==27&&verb==0xf34&&payload==15){hda_codec_response(hda,true,0xf);return;};
     case 3071:
         st = a->st + node->stindex;
         if (st->node == NULL) {
+                hda_codec_response(hda, true, 0x0);
                 dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
                 break;
         } else if (data & AC_AMP_GET_INPUT) {
@@ -2553,6 +2560,7 @@ if(nid==27&&verb==0xf34&&payload==15){hda_codec_response(hda,true,0xf);return;};
     case 1023:
         st = a->st + node->stindex;
         if (st->node == NULL) {
+            hda_codec_response(hda, true, 0x0);
             dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
@@ -2621,6 +2629,7 @@ if(nid==27&&verb==0xf34&&payload==15){hda_codec_response(hda,true,0xf);return;};
     default:
         st = a->st + node->stindex;
         if (st->node == NULL) {
+            hda_codec_response(hda, true, 0x0);
             dprint(a, 1, "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n", __func__, data, nid, node ? node->name : "?", verb, payload);
             break;
         }
