@@ -97,17 +97,6 @@ static void kvm_cpu_xsave_init(void)
  *       docs/system/target-i386.rst)
  */
 static PropValue kvm_default_props[] = {
-    { "kvmclock", "on" },
-    { "kvm-nopiodelay", "on" },
-    { "kvm-asyncpf", "on" },
-    { "kvm-steal-time", "on" },
-    { "kvm-pv-eoi", "on" },
-    { "kvmclock-stable-bit", "on" },
-    { "x2apic", "on" },
-    { "kvm-msi-ext-dest-id", "off" },
-    { "acpi", "off" },
-    { "monitor", "off" },
-    { "svm", "off" },
     { NULL, NULL },
 };
 
@@ -139,13 +128,6 @@ static void kvm_cpu_instance_init(CPUState *cs)
     host_cpu_instance_init(cpu);
 
     if (xcc->model) {
-        /* only applies to builtin_x86_defs cpus */
-        if (!kvm_irqchip_in_kernel()) {
-            x86_cpu_change_kvm_default("x2apic", "off");
-        } else if (kvm_irqchip_is_split()) {
-            x86_cpu_change_kvm_default("kvm-msi-ext-dest-id", "on");
-        }
-
         /* Special cases not set in the X86CPUDefinition structs: */
         x86_cpu_apply_props(cpu, kvm_default_props);
     }
