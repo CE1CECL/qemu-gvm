@@ -4,7 +4,7 @@
   
   Copyright (c) 2007 Andrzej Zaborowski <balrog@zabor.org>
   
-  Copyright (c) 2023-2024 Christopher Eric Lentocha <christopherericlentocha@gmail.com>
+  Copyright (c) 2023-2025 Christopher Eric Lentocha <christopherericlentocha@gmail.com>
   
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -1762,6 +1762,9 @@ static inline int vmsvga_fifo_length(struct vmsvga_state_s * s) {
   } else {
     num = (((s -> fifo_max) - (s -> fifo_min)) + ((s -> fifo_next) - (s -> fifo_stop)));
   }
+  #ifdef VERBOSE
+  printf("vmsvga: vmsvga_fifo_length: fifo_min: %u, fifo_max: %u, fifo_next: %u, fifo_stop: %u, num: %u, fifo_min: %u, fifo_max: %u, fifo_next: %u, fifo_stop: %u\n", s -> fifo_min, s -> fifo_max, s -> fifo_next, s -> fifo_stop, num, s -> fifo[SVGA_FIFO_MIN], s -> fifo[SVGA_FIFO_MAX], s -> fifo[SVGA_FIFO_NEXT_CMD], s -> fifo[SVGA_FIFO_STOP]);
+  #endif
   return (num >> 2);
 }
 static inline uint32_t vmsvga_fifo_read_raw(struct vmsvga_state_s * s) {
@@ -5909,7 +5912,11 @@ static void * vmsvga_loop(void * arg) {
     }
     s -> fifo[SVGA_FIFO_3D_HWVERSION] = SVGA3D_HWVERSION_CURRENT;
     s -> fifo[SVGA_FIFO_3D_HWVERSION_REVISED] = SVGA3D_HWVERSION_CURRENT;
+    #ifdef VERBOSE
     s -> fifo[SVGA_FIFO_FLAGS] = SVGA_FIFO_FLAG_ACCELFRONT;
+    #else
+    s -> fifo[SVGA_FIFO_FLAGS] = SVGA_FIFO_FLAG_NONE;
+    #endif
     s -> fifo[SVGA_FIFO_BUSY] = s -> sync;
     //s -> fifo[SVGA_FIFO_CAPABILITIES] = 1919;
     s -> fifo[SVGA_FIFO_CAPABILITIES] = s -> fc;
@@ -6396,8 +6403,7 @@ static uint32_t vmsvga_value_read(void * opaque, uint32_t address) {
     #endif
     break;
   case SVGA_REG_MEMORY_SIZE:
-    //ret = 1073741824;
-    ret = 4194304;
+    ret = 1073741824;
     #ifdef VERBOSE
     printf("%s: SVGA_REG_MEMORY_SIZE register %u with the return of %u\n", __func__, s -> index, ret);
     #endif
