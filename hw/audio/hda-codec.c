@@ -152,6 +152,9 @@ struct HDAAudioStream {
     uint32_t left_gain, right_gain;
     bool mute_left, mute_right;
     bool left_mute, right_mute;
+    bool out_mute, in_mute;
+    uint32_t out_left, out_right;
+    uint32_t in_left, in_right;
     struct audsettings as;
     union {
         SWVoiceIn *in;
@@ -412,7 +415,7 @@ static void hda_audio_set_running(HDAAudioStream *st, bool running)
     st->running = running;
     trace_hda_audio_running(st->node->name, st->stream, st->running);
     if (st->state->use_timer) {
-        if (running) {
+        if (st->running) {
             int64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
             st->rpos = 0;
             st->wpos = 0;
@@ -423,46 +426,46 @@ static void hda_audio_set_running(HDAAudioStream *st, bool running)
         }
     }
     if (st->output) {
-        AUD_set_active_out(st->voice.out, true);
+        AUD_set_active_out(st->voice.out, st->running);
+        if (st->running) {
+            AUD_set_volume_out(st->voice.out, st->out_mute, st->out_left, st->out_right);
+        }
     }
     if (st->input) {
-        AUD_set_active_in(st->voice.in, true);
+        AUD_set_active_in(st->voice.in, st->running);
+        if (st->running) {
+            AUD_set_volume_in(st->voice.in, st->in_mute, st->in_left, st->in_right);
+        }
     }
 }
 
 static void hda_audio_set_amp(HDAAudioStream *st)
 {
-    bool muted;
-    uint32_t left, right;
-
     if (st->node == NULL) {
         return;
     }
-
     if (st->out == true) {
-        muted = st->mute_left && st->mute_right;
-        left  = st->gain_left;
-        right = st->gain_right;
-        left = left * 255 / 74;
-        right = right * 255 / 74;
+        st->out_mute = st->mute_left && st->mute_right;
+        st->out_left  = st->gain_left * 255 / 74;
+        st->out_right = st->gain_right * 255 / 74;
     } else if (st->in == true) {
-        muted = st->left_mute && st->right_mute;
-        left  = st->left_gain;
-        right = st->right_gain;
-        left = left * 255 / 74;
-        right = right * 255 / 74;
+        st->in_mute = st->left_mute && st->right_mute;
+        st->in_left  = st->left_gain * 255 / 74;
+        st->in_right = st->right_gain * 255 / 74;
     } else {
         return;
     }
-
-    if (!st->state->mixer) {
-        return;
-    }
     if ((st->out == true) && (st->output)) {
-        AUD_set_volume_out(st->voice.out, muted, left, right);
+        AUD_set_active_out(st->voice.out, st->running);
+        if (st->running) {
+            AUD_set_volume_out(st->voice.out, st->out_mute, st->out_left, st->out_right);
+        }
     }
     if ((st->in == true) && (st->input)) {
-        AUD_set_volume_in(st->voice.in, muted, left, right);
+        AUD_set_active_in(st->voice.in, st->running);
+        if (st->running) {
+            AUD_set_volume_in(st->voice.in, st->in_mute, st->in_left, st->in_right);
+        }
     }
 }
 
@@ -3060,6 +3063,12 @@ static const VMStateDescription vmstate_hda_audio_stream = {
         VMSTATE_BOOL(mute_right, HDAAudioStream),
         VMSTATE_BOOL(left_mute, HDAAudioStream),
         VMSTATE_BOOL(right_mute, HDAAudioStream),
+        VMSTATE_BOOL(out_mute, HDAAudioStream),
+        VMSTATE_BOOL(in_mute, HDAAudioStream),
+        VMSTATE_UINT32(out_left, HDAAudioStream),
+        VMSTATE_UINT32(out_right, HDAAudioStream),
+        VMSTATE_UINT32(in_left, HDAAudioStream),
+        VMSTATE_UINT32(in_right, HDAAudioStream),
         VMSTATE_UINT32(compat_bpos, HDAAudioStream),
         VMSTATE_BUFFER(compat_buf, HDAAudioStream),
         VMSTATE_END_OF_LIST()
