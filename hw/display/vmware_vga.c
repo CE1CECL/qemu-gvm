@@ -26,6 +26,7 @@
   
  */
 //#define VERBOSE
+//#define QEMU_V9_2_0
 #include <pthread.h>
 #include "qemu/osdep.h"
 #include "qemu/module.h"
@@ -34,7 +35,12 @@
 #include "qemu/log.h"
 #include "hw/loader.h"
 #include "trace.h"
+#ifdef QEMU_V9_2_0
+#include "hw/pci/pci_device.h"
+#else
 #include "hw/pci/pci.h"
+#endif
+#include "ui/console.h"
 #include "hw/qdev-properties.h"
 #include "migration/vmstate.h"
 #include "qom/object.h"
@@ -56,29 +62,21 @@
 #include "include/VGPU10ShaderTokens.h"
 #include "include/vmware_pack_begin.h"
 #include "include/vmware_pack_end.h"
+#define SVGA_CAP_UNKNOWN_A 0x00000001
+#define SVGA_CAP_UNKNOWN_B 0x00000004
+#define SVGA_CAP_UNKNOWN_C 0x00000008
+#define SVGA_CAP_UNKNOWN_D 0x00000010
+#define SVGA_CAP_UNKNOWN_E 0x00000400
+#define SVGA_CAP_UNKNOWN_F 0x00000800
+#define SVGA_CAP_UNKNOWN_G 0x00001000
+#define SVGA_CAP_UNKNOWN_H 0x00002000
+#define SVGA_CAP_HP_CMD_QUEUE 0x20000000
+#define SVGA_CAP_NO_BB_RESTRICTION 0x40000000
 #define VMSVGA_IS_VALID_FIFO_REG(a_iIndex, a_offFifoMin) ( ((a_iIndex) + 1) * sizeof(uint32_t) <= (a_offFifoMin) )
 #define SVGA_PIXMAP_SIZE(w, h, bpp)(((((w) * (bpp))) >> 5) * (h))
 #define SVGA_CMD_RECT_FILL 2
 #define SVGA_CMD_DISPLAY_CURSOR 20
 #define SVGA_CMD_MOVE_CURSOR 21
-#define SVGA_CAP_DX 0x10000000
-#define SVGA_CAP_HP_CMD_QUEUE 0x20000000
-#define SVGA_CAP_NO_BB_RESTRICTION 0x40000000
-#define SVGA_CAP2_DX2 0x00000004
-#define SVGA_CAP2_GB_MEMSIZE_2 0x00000008
-#define SVGA_CAP2_SCREENDMA_REG 0x00000010
-#define SVGA_CAP2_OTABLE_PTDEPTH_2 0x00000020
-#define SVGA_CAP2_NON_MS_TO_MS_STRETCHBLT 0x00000040
-#define SVGA_CAP2_CURSOR_MOB 0x00000080
-#define SVGA_CAP2_MSHINT 0x00000100
-#define SVGA_CAP2_CB_MAX_SIZE_4MB 0x00000200
-#define SVGA_CAP2_DX3 0x00000400
-#define SVGA_CAP2_FRAME_TYPE 0x00000800
-#define SVGA_CAP2_COTABLE_COPY 0x00001000
-#define SVGA_CAP2_TRACE_FULL_FB 0x00002000
-#define SVGA_CAP2_EXTRA_REGS 0x00004000
-#define SVGA_CAP2_LO_STAGING 0x00008000
-#define SVGA_CAP2_VIDEO_BLT 0x00010000
 #define SVGA_REG_CURSOR_MOBID 65
 #define SVGA_REG_CURSOR_MAX_BYTE_SIZE 66
 #define SVGA_REG_CURSOR_MAX_DIMENSION 67
@@ -1662,6 +1660,7 @@ struct vmsvga_state_s {
   uint32_t pitchlock;
   uint32_t cursor;
   uint32_t fc;
+  uint32_t ff;
   uint32_t *fifo;
   uint32_t *scratch;
   VGACommonState vga;
@@ -1718,7 +1717,11 @@ static inline void vmsvga_cursor_define(struct vmsvga_state_s * s,
     printf("vmsvga: vmsvga_cursor_define | xor_mask == %u : and_mask == %u\n", * c -> xor_mask, * c -> and_mask);
     #endif
     dpy_cursor_define(s -> vga.con, qc);
+    #ifdef QEMU_V9_2_0
+    cursor_unref(qc);
+    #else
     cursor_put(qc);
+    #endif
   }
 }
 static inline void vmsvga_rgba_cursor_define(struct vmsvga_state_s * s,
@@ -1745,7 +1748,11 @@ static inline void vmsvga_rgba_cursor_define(struct vmsvga_state_s * s,
     printf("vmsvga: vmsvga_rgba_cursor_define | xor_mask == %u : and_mask == %u\n", * c -> xor_mask, * c -> and_mask);
     #endif
     dpy_cursor_define(s -> vga.con, qc);
+    #ifdef QEMU_V9_2_0
+    cursor_unref(qc);
+    #else
     cursor_put(qc);
+    #endif
   }
 }
 static inline int vmsvga_fifo_length(struct vmsvga_state_s * s) {
@@ -5912,11 +5919,8 @@ static void * vmsvga_loop(void * arg) {
     }
     s -> fifo[SVGA_FIFO_3D_HWVERSION] = SVGA3D_HWVERSION_CURRENT;
     s -> fifo[SVGA_FIFO_3D_HWVERSION_REVISED] = SVGA3D_HWVERSION_CURRENT;
-    #ifdef VERBOSE
-    s -> fifo[SVGA_FIFO_FLAGS] = SVGA_FIFO_FLAG_ACCELFRONT;
-    #else
-    s -> fifo[SVGA_FIFO_FLAGS] = SVGA_FIFO_FLAG_NONE;
-    #endif
+    //s -> fifo[SVGA_FIFO_FLAGS] = 0;
+    s -> fifo[SVGA_FIFO_FLAGS] = s -> ff;
     s -> fifo[SVGA_FIFO_BUSY] = s -> sync;
     //s -> fifo[SVGA_FIFO_CAPABILITIES] = 1919;
     s -> fifo[SVGA_FIFO_CAPABILITIES] = s -> fc;
@@ -6168,12 +6172,15 @@ static uint32_t vmsvga_value_read(void * opaque, uint32_t address) {
     break;
   case SVGA_REG_CAPABILITIES:
     //ret = 4261397474;
-    caps = 4294967295;
+    caps = 0xffffffff;
     #ifdef VERBOSE
     #else
-    caps -= SVGA_CAP_SCREEN_OBJECT_2;
-    caps -= SVGA_CAP_CMD_BUFFERS_2;
-    caps -= SVGA_CAP_GBOBJECTS;
+    caps -= SVGA_CAP_UNKNOWN_A; // Windows 9x
+    caps -= SVGA_CAP_UNKNOWN_C; // Windows 9x
+    caps -= SVGA_CAP_RECT_COPY; // Windows 9x & Windows (XPDM)
+    caps -= SVGA_CAP_SCREEN_OBJECT_2; // Linux
+    caps -= SVGA_CAP_CMD_BUFFERS_2; // Windows (WDDM)
+    caps -= SVGA_CAP_GBOBJECTS; // Linux, Windows (XPDM) & Windows (WDDM)
     #endif
     ret = caps;
     #ifdef VERBOSE
@@ -6182,7 +6189,7 @@ static uint32_t vmsvga_value_read(void * opaque, uint32_t address) {
     break;
   case SVGA_REG_CAP2:
     //ret = 389119;
-    cap2 = 4294967295;
+    cap2 = 0xffffffff;
     ret = cap2;
     #ifdef VERBOSE
     printf("%s: SVGA_REG_CAP2 register %u with the return of %u\n", __func__, s -> index, ret);
@@ -16827,13 +16834,12 @@ static int vmsvga_post_load(void * opaque, int version_id) {
   s -> config = 1;
   return 0;
 }
-static
-const VMStateDescription vmstate_vmware_vga_internal = {
+static const VMStateDescription vmstate_vmware_vga_internal = {
   .name = "vmware_vga_internal",
   .version_id = 1,
   .minimum_version_id = 0,
   .post_load = vmsvga_post_load,
-  .fields = (VMStateField[]) {
+  .fields = (const VMStateField[]) {
     VMSTATE_UINT32(svgapalettebase0, struct vmsvga_state_s),
     VMSTATE_UINT32(svgapalettebase1, struct vmsvga_state_s),
     VMSTATE_UINT32(svgapalettebase2, struct vmsvga_state_s),
@@ -17638,6 +17644,7 @@ const VMStateDescription vmstate_vmware_vga_internal = {
     VMSTATE_UINT32(pitchlock, struct vmsvga_state_s),
     VMSTATE_UINT32(cursor, struct vmsvga_state_s),
     VMSTATE_UINT32(fc, struct vmsvga_state_s),
+    VMSTATE_UINT32(ff, struct vmsvga_state_s),
     VMSTATE_END_OF_LIST()
   }
 };
@@ -17646,7 +17653,7 @@ const VMStateDescription vmstate_vmware_vga = {
   .name = "vmware_vga",
   .version_id = 0,
   .minimum_version_id = 0,
-  .fields = (VMStateField[]) {
+  .fields = (const VMStateField[]) {
     VMSTATE_PCI_DEVICE(parent_obj, struct pci_vmsvga_state_s),
     VMSTATE_STRUCT(chip, struct pci_vmsvga_state_s, 0, vmstate_vmware_vga_internal, struct vmsvga_state_s),
     VMSTATE_END_OF_LIST()
@@ -17671,18 +17678,24 @@ static void vmsvga_init(DeviceState * dev, struct vmsvga_state_s * s,
   s -> fifo = (uint32_t * ) memory_region_get_ram_ptr( & s -> fifo_ram);
   vga_common_init( & s -> vga, OBJECT(dev), & error_fatal);
   vga_init( & s -> vga, OBJECT(dev), address_space, io, true);
+  #ifdef QEMU_V9_2_0
+  vmstate_register_any(NULL, &vmstate_vga_common, &s->vga);
+  #else
   vmstate_register(NULL, 0, & vmstate_vga_common, & s -> vga);
+  #endif
   if (s -> thread <= 0) {
     s -> thread++;
     s -> new_width = 1024;
     s -> new_height = 768;
     s -> new_depth = 32;
     pthread_t threads[1];
-    s -> fc = 4294967295;
+    s -> fc = 0xffffffff;
+    s -> ff = 0xffffffff;
     #ifdef VERBOSE
     #else
-    s -> fc -= SVGA_FIFO_CAP_SCREEN_OBJECT;
-    s -> fc -= SVGA_FIFO_CAP_SCREEN_OBJECT_2;
+    s -> ff -= SVGA_FIFO_FLAG_ACCELFRONT; // Windows (XPDM)
+    s -> fc -= SVGA_FIFO_CAP_SCREEN_OBJECT; // Windows (WDDM)
+    s -> fc -= SVGA_FIFO_CAP_SCREEN_OBJECT_2; // Windows (WDDM)
     #endif
     pthread_create(threads, NULL, vmsvga_loop, (void * ) s);
   };
@@ -17808,7 +17821,11 @@ static void vmsvga_class_init(ObjectClass * klass, void * data) {
   k -> subsystem_vendor_id = PCI_VENDOR_ID_VMWARE;
   k -> subsystem_id = PCI_DEVICE_ID_VMWARE_SVGA2;
   k -> revision = 0x00;
+  #ifdef QEMU_V9_2_0
+  device_class_set_legacy_reset(dc, vmsvga_reset);
+  #else
   dc -> reset = vmsvga_reset;
+  #endif
   dc -> vmsd = & vmstate_vmware_vga;
   device_class_set_props(dc, vga_vmware_properties);
   dc -> hotpluggable = false;

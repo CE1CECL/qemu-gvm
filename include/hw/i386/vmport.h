@@ -23,6 +23,6 @@ static inline void vmport_init(ISABus *bus)
     isa_create_simple(bus, TYPE_VMPORT);
 }
 
-void vmport_register(VMPortCommand command, VMPortReadFunc *func, void *opaque);
+bool vmport_register(VMPortCommand command, VMPortReadFunc *func, void *opaque);
 
 #endif
