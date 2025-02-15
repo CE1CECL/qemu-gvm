@@ -80,14 +80,16 @@ struct VMPortState {
 
 static VMPortState *port_state;
 
-void vmport_register(VMPortCommand command, VMPortReadFunc *func, void *opaque)
+bool vmport_register(VMPortCommand command, VMPortReadFunc *func, void *opaque)
 {
-    assert(command < VMPORT_ENTRIES);
-    assert(port_state);
+    if (command >= VMPORT_ENTRIES || !port_state) {
+        return false;
+    }
 
     trace_vmport_register(command, func, opaque);
     port_state->func[command] = func;
     port_state->opaque[command] = opaque;
+    return true;
 }
 
 static uint64_t vmport_ioport_read(void *opaque, hwaddr addr,
@@ -188,7 +190,7 @@ static uint32_t vmport_cmd_ram_size(void *opaque, uint32_t addr)
         return -1;
     }
     cpu->env.regs[R_EBX] = 0x1177;
-    return current_machine->ram_size;
+    return current_machine->ram_size >> 20; /* in MB */
 }
 
 static uint32_t vmport_cmd_get_hz(void *opaque, uint32_t addr)
