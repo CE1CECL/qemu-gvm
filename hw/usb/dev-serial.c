@@ -122,7 +122,7 @@ static const USBDescStrings desc_strings = {
     [STR_MANUFACTURER]    = "2007",
     [STR_PRODUCT_SERIAL]  = "2007 USB SERIAL",
     [STR_PRODUCT_BRAILLE] = "2007 USB BAUM BRAILLE",
-    [STR_SERIALNUMBER]    = "39344488",
+    [STR_SERIALNUMBER]    = "0",
 };
 
 static const USBDescIface desc_iface0 = {

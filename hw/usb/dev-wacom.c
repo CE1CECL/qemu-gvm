@@ -66,7 +66,7 @@ enum {
 static const USBDescStrings desc_strings = {
     [STR_MANUFACTURER]     = "2007",
     [STR_PRODUCT]          = "Wacom PenPartner",
-    [STR_SERIALNUMBER]     = "28846363",
+    [STR_SERIALNUMBER]     = "0",
 };
 
 static const uint8_t qemu_wacom_hid_report_descriptor[] = {

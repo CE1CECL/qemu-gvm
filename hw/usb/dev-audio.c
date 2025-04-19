@@ -75,7 +75,7 @@ enum usb_audio_strings {
 static const USBDescStrings usb_audio_stringtable = {
     [STRING_MANUFACTURER]       = "2007",
     [STRING_PRODUCT]            = "2007 USB Audio",
-    [STRING_SERIALNUMBER]       = "1",
+    [STRING_SERIALNUMBER]       = "0",
     [STRING_CONFIG]             = "Audio Configuration",
     [STRING_USBAUDIO_CONTROL]   = "Audio Device",
     [STRING_INPUT_TERMINAL]     = "Audio Output Pipe",

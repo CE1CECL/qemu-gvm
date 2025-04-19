@@ -7803,6 +7803,22 @@ static void hda_audio_command(HDACodecDevice *hda, uint32_t nid,
   };
 
   switch (verb) {
+  case AC_VERB_GET_SUBSYSTEM_ID:
+    st = a->st + node->stindex;
+    if (st->node == NULL) {
+      hda_codec_response(hda, true, 0x0);
+      dprint(
+          a, 1,
+          "%s: not handled: data 0x%x, nid %d (%s), verb 0x%x, payload 0x%x\n",
+          __func__, data, nid, node ? node->name : "?", verb, payload);
+      break;
+    }
+    if (1) {
+      hda_codec_response(hda, true, 0x106b3800);
+    } else {
+      hda_codec_response(hda, true, 0x00000000);
+    }
+    break;
   case AC_VERB_PARAMETERS:
     st = a->st + node->stindex;
     if (st->node == NULL) {

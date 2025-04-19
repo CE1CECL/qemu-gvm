@@ -264,7 +264,7 @@ enum {
 static const USBDescStrings desc_strings = {
     [STR_MANUFACTURER] = MTP_MANUFACTURER,
     [STR_PRODUCT]      = MTP_PRODUCT,
-    [STR_SERIALNUMBER] = "34617",
+    [STR_SERIALNUMBER] = "0",
     [STR_MTP]          = "MTP",
     [STR_CONFIG_FULL]  = "Full speed config (usb 1.1)",
     [STR_CONFIG_HIGH]  = "High speed config (usb 2.0)",
