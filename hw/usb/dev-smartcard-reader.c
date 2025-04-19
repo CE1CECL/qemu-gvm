@@ -419,7 +419,7 @@ enum {
 static const USBDescStrings desc_strings = {
     [STR_MANUFACTURER]  = "CECL",
     [STR_PRODUCT]       = "CECL USB CCID",
-    [STR_SERIALNUMBER]  = "1",
+    [STR_SERIALNUMBER]  = "0",
     [STR_INTERFACE]     = "CCID Interface",
 };
 

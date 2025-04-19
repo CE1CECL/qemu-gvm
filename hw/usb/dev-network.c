@@ -106,7 +106,7 @@ static const USBDescStrings usb_net_stringtable = {
     [STRING_CDC]                = "CECL USB Net CDC",
     [STRING_SUBSET]             = "CECL USB Net Subset",
     [STRING_RNDIS]              = "CECL USB Net RNDIS",
-    [STRING_SERIALNUMBER]       = "48878997",
+    [STRING_SERIALNUMBER]       = "0",
 };
 
 static const USBDescIface desc_iface_rndis[] = {

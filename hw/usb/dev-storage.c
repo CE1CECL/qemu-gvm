@@ -49,7 +49,7 @@ enum {
 static const USBDescStrings desc_strings = {
     [STR_MANUFACTURER] = "CECL",
     [STR_PRODUCT]      = "CECL USB HARDDRIVE",
-    [STR_SERIALNUMBER] = "1",
+    [STR_SERIALNUMBER] = "0",
     [STR_CONFIG_FULL]  = "Full speed config (usb 1.1)",
     [STR_CONFIG_HIGH]  = "High speed config (usb 2.0)",
     [STR_CONFIG_SUPER] = "Super speed config (usb 3.0)",

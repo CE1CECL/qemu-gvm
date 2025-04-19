@@ -228,23 +228,6 @@ uint32_t gvm_arch_get_supported_cpuid(GVMState *s, uint32_t function,
         ret = cpuid_entry_get_reg(entry, reg);
     }
 
-    /* Fixups for the data returned by GVM, below */
-
-    if (function == 1 && reg == R_ECX) {
-        /* We can set the hypervisor flag, even if GVM does not return it on
-         * GET_SUPPORTED_CPUID
-         */
-        ret |= CPUID_EXT_HYPERVISOR;
-    } else if (function == 6 && reg == R_EAX) {
-        ret |= CPUID_6_EAX_ARAT; /* safe to allow because of emulated APIC */
-    } else if (function == 0x80000001 && reg == R_EDX) {
-        /* On Intel, gvm returns cpuid according to the Intel spec,
-         * so add missing bits according to the AMD spec:
-         */
-        cpuid_1_edx = gvm_arch_get_supported_cpuid(s, 1, 0, R_EDX);
-        ret |= cpuid_1_edx & CPUID_EXT2_AMD_ALIASES;
-    }
-
     return ret;
 }
 

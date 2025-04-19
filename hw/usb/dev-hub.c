@@ -106,7 +106,7 @@ enum {
 static const USBDescStrings desc_strings = {
     [STR_MANUFACTURER] = "CECL",
     [STR_PRODUCT]      = "CECL USB Hub",
-    [STR_SERIALNUMBER] = "114514",
+    [STR_SERIALNUMBER] = "0",
 };
 
 static const USBDescIface desc_iface_hub = {

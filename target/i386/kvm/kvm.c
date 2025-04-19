@@ -288,20 +288,6 @@ static struct kvm_cpuid2 *get_supported_cpuid(KVMState *s)
     return cpuid;
 }
 
-static bool host_tsx_broken(void)
-{
-    int family, model, stepping;\
-    char vendor[CPUID_VENDOR_SZ + 1];
-
-    host_cpu_vendor_fms(vendor, &family, &model, &stepping);
-
-    /* Check if we are running on a Haswell host known to have broken TSX */
-    return !strcmp(vendor, CPUID_VENDOR_INTEL) &&
-           (family == 6) &&
-           ((model == 63 && stepping < 4) ||
-            model == 60 || model == 69 || model == 70);
-}
-
 /* Returns the value for a specific register on the cpuid entry
  */
 static uint32_t cpuid_entry_get_reg(struct kvm_cpuid_entry2 *entry, int reg)
@@ -346,117 +332,12 @@ uint32_t kvm_arch_get_supported_cpuid(KVMState *s, uint32_t function,
 {
     struct kvm_cpuid2 *cpuid;
     uint32_t ret = 0;
-    uint32_t cpuid_1_edx;
-    uint64_t bitmask;
 
     cpuid = get_supported_cpuid(s);
 
     struct kvm_cpuid_entry2 *entry = cpuid_find_entry(cpuid, function, index);
     if (entry) {
         ret = cpuid_entry_get_reg(entry, reg);
-    }
-
-    /* Fixups for the data returned by KVM, below */
-
-    if (function == 1 && reg == R_EDX) {
-        /* KVM before 2.6.30 misreports the following features */
-        ret |= CPUID_MTRR | CPUID_PAT | CPUID_MCE | CPUID_MCA;
-    } else if (function == 1 && reg == R_ECX) {
-        /* We can set the hypervisor flag, even if KVM does not return it on
-         * GET_SUPPORTED_CPUID
-         */
-        /* tsc-deadline flag is not returned by GET_SUPPORTED_CPUID, but it
-         * can be enabled if the kernel has KVM_CAP_TSC_DEADLINE_TIMER,
-         * and the irqchip is in the kernel.
-         */
-        if (kvm_irqchip_in_kernel() &&
-                kvm_check_extension(s, KVM_CAP_TSC_DEADLINE_TIMER)) {
-            ret |= CPUID_EXT_TSC_DEADLINE_TIMER;
-        }
-
-        /* x2apic is reported by GET_SUPPORTED_CPUID, but it can't be enabled
-         * without the in-kernel irqchip
-         */
-        if (!kvm_irqchip_in_kernel()) {
-            ret &= ~CPUID_EXT_X2APIC;
-        }
-
-        if (enable_cpu_pm) {
-            int disable_exits = kvm_check_extension(s,
-                                                    KVM_CAP_X86_DISABLE_EXITS);
-
-            if (disable_exits & KVM_X86_DISABLE_EXITS_MWAIT) {
-                ret |= CPUID_EXT_MONITOR;
-            }
-        }
-    } else if (function == 6 && reg == R_EAX) {
-        ret |= CPUID_6_EAX_ARAT; /* safe to allow because of emulated APIC */
-    } else if (function == 7 && index == 0 && reg == R_EBX) {
-        if (host_tsx_broken()) {
-            ret &= ~(CPUID_7_0_EBX_RTM | CPUID_7_0_EBX_HLE);
-        }
-    } else if (function == 7 && index == 0 && reg == R_EDX) {
-        /*
-         * Linux v4.17-v4.20 incorrectly return ARCH_CAPABILITIES on SVM hosts.
-         * We can detect the bug by checking if MSR_IA32_ARCH_CAPABILITIES is
-         * returned by KVM_GET_MSR_INDEX_LIST.
-         */
-        if (!has_msr_arch_capabs) {
-            ret &= ~CPUID_7_0_EDX_ARCH_CAPABILITIES;
-        }
-    } else if (function == 0xd && index == 0 &&
-               (reg == R_EAX || reg == R_EDX)) {
-        /*
-         * The value returned by KVM_GET_SUPPORTED_CPUID does not include
-         * features that still have to be enabled with the arch_prctl
-         * system call.  QEMU needs the full value, which is retrieved
-         * with KVM_GET_DEVICE_ATTR.
-         */
-        struct kvm_device_attr attr = {
-            .group = 0,
-            .attr = KVM_X86_XCOMP_GUEST_SUPP,
-            .addr = (unsigned long) &bitmask
-        };
-
-        bool sys_attr = kvm_check_extension(s, KVM_CAP_SYS_ATTRIBUTES);
-        if (!sys_attr) {
-            return ret;
-        }
-
-        int rc = kvm_ioctl(s, KVM_GET_DEVICE_ATTR, &attr);
-        if (rc < 0) {
-            if (rc != -ENXIO) {
-                warn_report("KVM_GET_DEVICE_ATTR(0, KVM_X86_XCOMP_GUEST_SUPP) "
-                            "error: %d", rc);
-            }
-            return ret;
-        }
-        ret = (reg == R_EAX) ? bitmask : bitmask >> 32;
-    } else if (function == 0x80000001 && reg == R_ECX) {
-        /*
-         * It's safe to enable TOPOEXT even if it's not returned by
-         * GET_SUPPORTED_CPUID.  Unconditionally enabling TOPOEXT here allows
-         * us to keep CPU models including TOPOEXT runnable on older kernels.
-         */
-        ret |= CPUID_EXT3_TOPOEXT;
-    } else if (function == 0x80000001 && reg == R_EDX) {
-        /* On Intel, kvm returns cpuid according to the Intel spec,
-         * so add missing bits according to the AMD spec:
-         */
-        cpuid_1_edx = kvm_arch_get_supported_cpuid(s, 1, 0, R_EDX);
-        ret |= cpuid_1_edx & CPUID_EXT2_AMD_ALIASES;
-    } else if (function == KVM_CPUID_FEATURES && reg == R_EAX) {
-        /* kvm_pv_unhalt is reported by GET_SUPPORTED_CPUID, but it can't
-         * be enabled without the in-kernel irqchip
-         */
-        if (!kvm_irqchip_in_kernel()) {
-            ret &= ~(1U << KVM_FEATURE_PV_UNHALT);
-        }
-        if (kvm_irqchip_is_split()) {
-            ret |= 1U << KVM_FEATURE_MSI_EXT_DEST_ID;
-        }
-    } else if (function == KVM_CPUID_FEATURES && reg == R_EDX) {
-        ret |= 1U << KVM_HINTS_REALTIME;
     }
 
     return ret;

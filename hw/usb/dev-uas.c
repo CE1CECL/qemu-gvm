@@ -173,7 +173,7 @@ enum {
 static const USBDescStrings desc_strings = {
     [STR_MANUFACTURER] = "CECL",
     [STR_PRODUCT]      = "USB Attached SCSI HBA",
-    [STR_SERIALNUMBER] = "33121",
+    [STR_SERIALNUMBER] = "0",
     [STR_CONFIG_HIGH]  = "High speed config (usb 2.0)",
     [STR_CONFIG_SUPER] = "Super speed config (usb 3.0)",
 };
