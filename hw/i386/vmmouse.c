@@ -212,10 +212,10 @@ static uint32_t vmmouse_ioport_read(void *opaque, uint32_t addr)
     command = data[2] & 0xFFFF;
 
     switch (command) {
-    case VMPORT_CMD_VMMOUSE_STATUS:
+    case VMPORT_CMD_ABSPOINTER_STATUS:
         data[0] = vmmouse_get_status(s);
         break;
-    case VMPORT_CMD_VMMOUSE_COMMAND:
+    case VMPORT_CMD_ABSPOINTER_COMMAND:
         switch (data[1]) {
         case VMMOUSE_DISABLE:
             vmmouse_disable(s);
@@ -234,7 +234,7 @@ static uint32_t vmmouse_ioport_read(void *opaque, uint32_t addr)
             break;
         }
         break;
-    case VMPORT_CMD_VMMOUSE_DATA:
+    case VMPORT_CMD_ABSPOINTER_DATA:
         vmmouse_data(s, data, data[1]);
         break;
     default:
@@ -295,9 +295,9 @@ static void vmmouse_realizefn(DeviceState *dev, Error **errp)
         return;
     }
 
-    vmport_register(VMPORT_CMD_VMMOUSE_STATUS, vmmouse_ioport_read, s);
-    vmport_register(VMPORT_CMD_VMMOUSE_COMMAND, vmmouse_ioport_read, s);
-    vmport_register(VMPORT_CMD_VMMOUSE_DATA, vmmouse_ioport_read, s);
+    vmport_register(VMPORT_CMD_ABSPOINTER_STATUS, vmmouse_ioport_read, s);
+    vmport_register(VMPORT_CMD_ABSPOINTER_COMMAND, vmmouse_ioport_read, s);
+    vmport_register(VMPORT_CMD_ABSPOINTER_DATA, vmmouse_ioport_read, s);
 }
 
 static Property vmmouse_properties[] = {

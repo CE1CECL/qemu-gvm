@@ -345,6 +345,47 @@ static uint16_t mixer_load(AC97LinkState *s, uint32_t i)
     return val;
 }
 
+static void get_volume(uint16_t vol, uint16_t mask, int inverse,
+                       int *mute, uint8_t *lvol, uint8_t *rvol)
+{
+    *mute = (vol >> MUTE_SHIFT) & 1;
+    *rvol = (255 * (vol & mask)) / mask;
+    *lvol = (255 * ((vol >> 8) & mask)) / mask;
+
+    if (inverse) {
+        *rvol = 255 - *rvol;
+        *lvol = 255 - *lvol;
+    }
+}
+
+static void update_combined_volume_out(AC97LinkState *s)
+{
+    uint8_t lvol, rvol, plvol, prvol;
+    int mute, pmute;
+
+    get_volume(mixer_load(s, AC97_Master_Volume_Mute), 0x3f, 1,
+               &mute, &lvol, &rvol);
+    get_volume(mixer_load(s, AC97_PCM_Out_Volume_Mute), 0x1f, 1,
+               &pmute, &plvol, &prvol);
+
+    mute = mute | pmute;
+    lvol = (lvol * plvol) / 255;
+    rvol = (rvol * prvol) / 255;
+
+    AUD_set_volume_out(s->voice_po, mute, lvol, rvol);
+}
+
+static void update_volume_in(AC97LinkState *s)
+{
+    uint8_t lvol, rvol;
+    int mute;
+
+    get_volume(mixer_load(s, AC97_Record_Gain_Mute), 0x0f, 0,
+               &mute, &lvol, &rvol);
+
+    AUD_set_volume_in(s->voice_pi, mute, lvol, rvol);
+}
+
 static void open_voice(AC97LinkState *s, int index, int freq)
 {
     struct audsettings as;
@@ -356,6 +397,8 @@ static void open_voice(AC97LinkState *s, int index, int freq)
 
     if (freq > 0) {
         s->invalid_freq[index] = 0;
+        update_combined_volume_out(s);
+        update_volume_in(s);
         switch (index) {
         case PI_INDEX:
             s->voice_pi = AUD_open_in(
@@ -428,47 +471,6 @@ static void reset_voices(AC97LinkState *s, uint8_t active[LAST_INDEX])
     AUD_set_active_in(s->voice_mc, active[MC_INDEX]);
 }
 
-static void get_volume(uint16_t vol, uint16_t mask, int inverse,
-                       int *mute, uint8_t *lvol, uint8_t *rvol)
-{
-    *mute = (vol >> MUTE_SHIFT) & 1;
-    *rvol = (255 * (vol & mask)) / mask;
-    *lvol = (255 * ((vol >> 8) & mask)) / mask;
-
-    if (inverse) {
-        *rvol = 255 - *rvol;
-        *lvol = 255 - *lvol;
-    }
-}
-
-static void update_combined_volume_out(AC97LinkState *s)
-{
-    uint8_t lvol, rvol, plvol, prvol;
-    int mute, pmute;
-
-    get_volume(mixer_load(s, AC97_Master_Volume_Mute), 0x3f, 1,
-               &mute, &lvol, &rvol);
-    get_volume(mixer_load(s, AC97_PCM_Out_Volume_Mute), 0x1f, 1,
-               &pmute, &plvol, &prvol);
-
-    mute = mute | pmute;
-    lvol = (lvol * plvol) / 255;
-    rvol = (rvol * prvol) / 255;
-
-    AUD_set_volume_out(s->voice_po, mute, lvol, rvol);
-}
-
-static void update_volume_in(AC97LinkState *s)
-{
-    uint8_t lvol, rvol;
-    int mute;
-
-    get_volume(mixer_load(s, AC97_Record_Gain_Mute), 0x0f, 0,
-               &mute, &lvol, &rvol);
-
-    AUD_set_volume_in(s->voice_pi, mute, lvol, rvol);
-}
-
 static void set_volume(AC97LinkState *s, int index, uint32_t val)
 {
     switch (index) {
@@ -523,10 +525,8 @@ static void mixer_reset(AC97LinkState *s)
     /*
      * Sigmatel 9700 (STAC9700)
      */
-    mixer_store(s, AC97_Vendor_ID1, 0x414C);
-//    mixer_store(s, AC97_Vendor_ID1, 0x8384);
-    mixer_store(s, AC97_Vendor_ID2, 0x4790); /* 7608 */
-//    mixer_store(s, AC97_Vendor_ID2, 0x7600); /* 7608 */
+    mixer_store(s, AC97_Vendor_ID1, 0x8384);
+    mixer_store(s, AC97_Vendor_ID2, 0x7600); /* 7608 */
 
     mixer_store(s, AC97_Extended_Audio_ID, 0x0809);
     mixer_store(s, AC97_Extended_Audio_Ctrl_Stat, 0x0009);
@@ -1375,8 +1375,8 @@ static void ac97_class_init(ObjectClass *klass, void *data)
 
     k->realize = ac97_realize;
     k->exit = ac97_exit;
-    k->vendor_id = 0x8086; //PCI_VENDOR_ID_INTEL;
-    k->device_id = 0x7195; //PCI_DEVICE_ID_INTEL_82801AA_5;
+    k->vendor_id = PCI_VENDOR_ID_INTEL;
+    k->device_id = PCI_DEVICE_ID_INTEL_82801AA_5;
     k->revision = 0x01;
     k->class_id = PCI_CLASS_MULTIMEDIA_AUDIO;
     set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
