@@ -69,8 +69,8 @@ struct VMPortState {
     ISADevice parent_obj;
 
     MemoryRegion io;
-    VMPortReadFunc *func[VMPORT_ENTRIES];
-    void *opaque[VMPORT_ENTRIES];
+    VMPortReadFunc *func[VMPORT_CMD_MAX];
+    void *opaque[VMPORT_CMD_MAX];
 
     uint32_t vmware_vmx_version;
     uint8_t vmware_vmx_type;
@@ -82,7 +82,7 @@ static VMPortState *port_state;
 
 bool vmport_register(VMPortCommand command, VMPortReadFunc *func, void *opaque)
 {
-    if (command >= VMPORT_ENTRIES || !port_state) {
+    if (command >= VMPORT_CMD_MAX || !port_state) {
         return false;
     }
 
@@ -115,7 +115,7 @@ static uint64_t vmport_ioport_read(void *opaque, hwaddr addr,
 
     command = env->regs[R_ECX];
     trace_vmport_command(command);
-    if (command >= VMPORT_ENTRIES || !s->func[command]) {
+    if (command >= VMPORT_CMD_MAX || !s->func[command]) {
         qemu_log_mask(LOG_UNIMP, "vmport: unknown command %x\n", command);
         goto err;
     }
@@ -223,6 +223,75 @@ static uint32_t vmport_cmd_get_vcpu_info(void *opaque, uint32_t addr)
     return ret;
 }
 
+static uint32_t vmport_cmd_unknown(void *opaque, uint32_t addr)
+{
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+/*
+
+typedef enum {
+	SVGABackdoorCapDeviceCaps = 0,
+	SVGABackdoorCapFifoCaps = 1,
+	SVGABackdoorCap3dHWVersion = 2,
+	SVGABackdoorCapDeviceCaps2 = 3,
+	SVGABackdoorCapDevelCaps = 4,
+	SVGABackdoorCapDevCaps = 5,
+	SVGABackdoorDevelRenderer = 6,
+	SVGABackdoorDevelUsingISB = 7,
+	SVGABackdoorCapMax = 8,
+} SVGABackdoorCapType;
+
+*/
+
+// #define EXP3D
+// #define EXPCAPS
+
+static uint32_t vmport_cmd_svgacaps(void *opaque, uint32_t addr)
+{
+    X86CPU *cpu = X86_CPU(current_cpu);
+    uint32_t ret = 0;
+    switch ((cpu->env.regs[R_ECX] >> 16) & 0xffff) {
+        case 0: // SVGABackdoorCapDeviceCaps
+            ret = 0xffffffff;
+            #ifndef EXPCAPS
+            ret -= 0x00000001; // SVGA_CAP_UNKNOWN_A (Windows 9x)
+            ret -= 0x00000002; // SVGA_CAP_RECT_COPY (Windows 9x & Windows (XPDM))
+            ret -= 0x00000008; // SVGA_CAP_UNKNOWN_C (Windows 9x)
+            #endif
+            #ifndef EXP3D
+            ret -= 0x00004000; // SVGA_CAP_3D (Windows (WDDM))
+            #endif
+            #ifndef EXPCAPS
+            ret -= 0x00800000; // SVGA_CAP_SCREEN_OBJECT_2 (Linux)
+            ret -= 0x04000000; // SVGA_CAP_CMD_BUFFERS_2 (Windows (WDDM))
+            ret -= 0x08000000; // SVGA_CAP_GBOBJECTS (Linux, Windows (XPDM) & Windows (WDDM))
+            #endif
+            break;
+        case 1: // SVGABackdoorCapFifoCaps
+            ret = 0xffffffff;
+            #ifndef EXPCAPS
+            ret -= 0x00000080; // SVGA_FIFO_CAP_SCREEN_OBJECT
+            ret -= 0x00000200; // SVGA_FIFO_CAP_SCREEN_OBJECT_2
+            #endif
+            break;
+        case 2: // SVGABackdoorCap3dHWVersion
+            ret = 0x00020001; // SVGA3D_HWVERSION_WS8_B1
+            break;
+        default:
+            ret = -1;
+            break;
+    }
+    cpu->env.regs[R_EAX] = ret;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    return ret;
+}
+
 static const MemoryRegionOps vmport_ops = {
     .read = vmport_ioport_read,
     .write = vmport_ioport_write,
@@ -245,13 +314,117 @@ static void vmport_realizefn(DeviceState *dev, Error **errp)
 
     /* Register some generic port commands */
     vmport_register(VMPORT_CMD_GETVERSION, vmport_cmd_get_version, NULL);
-    vmport_register(VMPORT_CMD_GETRAMSIZE, vmport_cmd_ram_size, NULL);
+    vmport_register(VMPORT_CMD_GETMEMSIZE, vmport_cmd_ram_size, NULL);
     if (s->compat_flags & VMPORT_COMPAT_CMDS_V2) {
-        vmport_register(VMPORT_CMD_GETBIOSUUID, vmport_cmd_get_bios_uuid, NULL);
+        vmport_register(VMPORT_CMD_GETUUID, vmport_cmd_get_bios_uuid, NULL);
         vmport_register(VMPORT_CMD_GETHZ, vmport_cmd_get_hz, NULL);
         vmport_register(VMPORT_CMD_GET_VCPU_INFO, vmport_cmd_get_vcpu_info,
                         NULL);
     }
+    vmport_register(VMPORT_CMD_GET_SVGA_CAPABILITIES, vmport_cmd_svgacaps, NULL);
+    vmport_register(VMPORT_CMD_GETMHZ, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_APMFUNCTION, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETDISKGEO, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETPTRLOCATION, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SETPTRLOCATION, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETSELLENGTH, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETNEXTPIECE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SETSELLENGTH, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SETNEXTPIECE, vmport_cmd_unknown, NULL);
+    // vmport_register(VMPORT_CMD_GETVERSION, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETDEVICELISTELEMENT, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_TOGGLEDEVICE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETGUIOPTIONS, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SETGUIOPTIONS, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETSCREENSIZE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_MONITOR_CONTROL, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETHWVERSION, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_OSNOTFOUND, vmport_cmd_unknown, NULL);
+    // vmport_register(VMPORT_CMD_GETUUID, vmport_cmd_unknown, NULL);
+    // vmport_register(VMPORT_CMD_GETMEMSIZE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_HOSTCOPY, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SERVICE_VM, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETTIME, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_STOPCATCHUP, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_PUTCHR, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_ENABLE_MSG, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GOTO_TCL, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_INITPCIOPROM, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_INT13, vmport_cmd_unknown, NULL);
+    // vmport_register(VMPORT_CMD_MESSAGE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SIDT, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SGDT, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SLDT_STR, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_ISACPIDISABLED, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_TOE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_ISMOUSEABSOLUTE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_PATCH_SMBIOS_STRUCTS, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_MAPMEM, vmport_cmd_unknown, NULL);
+    // vmport_register(VMPORT_CMD_ABSPOINTER_DATA, vmport_cmd_unknown, NULL);
+    // vmport_register(VMPORT_CMD_ABSPOINTER_STATUS, vmport_cmd_unknown, NULL);
+    // vmport_register(VMPORT_CMD_ABSPOINTER_COMMAND, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_TIMER_SPONGE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_PATCH_ACPI_TABLES, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_DEVEL_FAKEHARDWARE, vmport_cmd_unknown, NULL);
+    // vmport_register(VMPORT_CMD_GETHZ, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETTIMEFULL, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_STATELOGGER, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_CHECKFORCEBIOSSETUP, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_LAZYTIMEREMULATION, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_BIOSBBS, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_VASSERT, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_ISGOSDARWIN, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_DEBUGEVENT, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_OSNOTMACOSXSERVER, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETTIMEFULL_WITH_LAG, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_ACPI_HOTPLUG_DEVICE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_ACPI_HOTPLUG_MEMORY, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_ACPI_HOTPLUG_CBRET, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GET_HOST_VIDEO_MODES, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_ACPI_HOTPLUG_CPU, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_USB_HOTPLUG_MOUSE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_XPMODE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_NESTING_CONTROL, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_FIRMWARE_INIT, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_FIRMWARE_ACPI_SERVICES, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SENDPSHAREHINTS, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_ENABLE_USB_MOUSE, vmport_cmd_unknown, NULL);
+    // vmport_register(VMPORT_CMD_GET_VCPU_INFO, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_EFI_SERIALCON_CONFIG, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_BUG328986, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_FIRMWARE_ERROR, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_VMK_INFO, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_EFI_BOOT_CONFIG, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GET_HW_MODEL, vmport_cmd_unknown, NULL);
+    // vmport_register(VMPORT_CMD_GET_SVGA_CAPABILITIES, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GET_FORCE_X2APIC, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SET_PCI_HOLE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GET_PCI_HOLE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GET_PCI_BAR, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SHOULD_GENERATE_SYSTEMID, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_READ_DEBUG_FILE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SCREENSHOT, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_INJECT_KEY, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_INJECT_MOUSE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_MKS_GUEST_STATS, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_ABSPOINTER_RESTRICT, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GUEST_INTEGRITY, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_MKSTEST, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_SECUREBOOT, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_COPY_PHYSMEM, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_STEALCLOCK, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GUEST_PAGE_HINTS, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_FIRMWARE_UPDATE, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_FUZZER_HELPER, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_PUTCHR12, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GMM, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_PRECISIONCLOCK, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_COREDUMP_UNSYNC, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_APPLE_GPU_RES_SET, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETBUILDNUM, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_GETENTROPY, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_REPORTGUESTCRASH, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_MAX, vmport_cmd_unknown, NULL);
 }
 
 static Property vmport_properties[] = {
@@ -285,7 +458,7 @@ static Property vmport_properties[] = {
      * 4 - VMware Workstation
      * 5 - ACE 1.x (Deprecated)
      */
-    DEFINE_PROP_UINT8("vmware-vmx-type", VMPortState, vmware_vmx_type, 2),
+    DEFINE_PROP_UINT8("vmware-vmx-type", VMPortState, vmware_vmx_type, 4),
 
     DEFINE_PROP_END_OF_LIST(),
 };

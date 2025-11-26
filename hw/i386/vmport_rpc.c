@@ -580,23 +580,44 @@ static void process_send_payload(VMPortRpcState *s, channel_t *c, vregs *ur,
         int rc;
 
         info_key = c->send.bytes + strlen("info-get guestinfo.");
-        if (((strncmp(c->send.bytes, "info-get guestinfo.svga.wddm.enable",
-                      strlen("info-get guestinfo.svga.wddm.enable")) == 0) ||
-             (strncmp(c->send.bytes, "info-get guestinfo.svga.enable",
-                      strlen("info-get guestinfo.svga.enable")) == 0)) &&
+        if ((strncmp(c->send.bytes, "info-get guestinfo.svga.wddm.bootTopology",
+                     strlen("info-get guestinfo.svga.wddm.bootTopology")) ==
+             0) ||
+            (strncmp(
+                 c->send.bytes, "info-get guestinfo.svga.wddm.vsyncDefaultHz",
+                 strlen("info-get guestinfo.svga.wddm.vsyncDefaultHz")) == 0) ||
+            (strncmp(c->send.bytes, "info-get guestinfo.svga.wddm.vsyncMaxHz",
+                     strlen("info-get guestinfo.svga.wddm.vsyncMaxHz")) == 0) ||
+            (strncmp(c->send.bytes, "info-get guestinfo.svga.disable",
+                     strlen("info-get guestinfo.svga.disable")) == 0) ||
+            (strncmp(c->send.bytes, "info-get guestinfo.svga.no",
+                     strlen("info-get guestinfo.svga.no")) == 0) ||
             (strncmp(c->send.bytes,
-                     "info-get guestinfo.svga.wddm.enableViewOnlyLargeCursor",
-                     strlen("info-get "
-                            "guestinfo.svga.wddm.enableViewOnlyLargeCursor")) !=
+                     "info-get guestinfo.svga.vmx_fb.hostMemorySize",
+                     strlen("info-get guestinfo.svga.vmx_fb.hostMemorySize")) ==
+             0) ||
+            (strncmp(
+                 c->send.bytes,
+                 "info-get guestinfo.svga.vmx_fb.guestMemorySize",
+                 strlen("info-get guestinfo.svga.vmx_fb.guestMemorySize")) ==
+             0) ||
+            (strncmp(c->send.bytes,
+                     "info-get guestinfo.svga.cex_fb.hostMemorySize",
+                     strlen("info-get guestinfo.svga.cex_fb.hostMemorySize")) ==
+             0) ||
+            (strncmp(
+                 c->send.bytes,
+                 "info-get guestinfo.svga.cex_fb.guestMemorySize",
+                 strlen("info-get guestinfo.svga.cex_fb.guestMemorySize")) ==
              0)) {
-          ret_msg = (char *)"1 TRUE";
+          ret_msg = (char *)"0 FALSE";
           ret_len = strlen(ret_msg) + 1;
         } else if (a_key_len <= MAX_KEY_LEN) {
 
           rc = get_guestinfo(s, info_key, a_key_len, ret_buffer,
                              sizeof(ret_buffer));
           if (rc == GUESTINFO_NOTFOUND) {
-            ret_msg = (char *)"0 No value found";
+            ret_msg = (char *)"1 TRUE";
             ret_len = strlen(ret_msg) + 1;
           } else {
             ret_msg = ret_buffer;
