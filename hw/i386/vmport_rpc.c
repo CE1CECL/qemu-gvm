@@ -609,6 +609,11 @@ static void process_send_payload(VMPortRpcState *s, channel_t *c, vregs *ur,
                  c->send.bytes,
                  "info-get guestinfo.svga.cex_fb.guestMemorySize",
                  strlen("info-get guestinfo.svga.cex_fb.guestMemorySize")) ==
+             0) ||
+            (strncmp(c->send.bytes,
+                     "info-get guestinfo.svga.wddm.enableViewOnlyLargeCursor",
+                     strlen("info-get "
+                            "guestinfo.svga.wddm.enableViewOnlyLargeCursor")) ==
              0)) {
           ret_msg = (char *)"0 FALSE";
           ret_len = strlen(ret_msg) + 1;
