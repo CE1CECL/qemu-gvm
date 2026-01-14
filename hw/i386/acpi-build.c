@@ -1789,7 +1789,7 @@ build_dsdt(GArray *table_data, BIOSLinker *linker,
     aml_append(dsdt, scope);
 
     /* create fw_cfg node, unconditionally */
-    {
+    if (0) {
         scope = aml_scope("\\_SB.PCI0");
         fw_cfg_add_acpi_dsdt(scope, x86ms->fw_cfg);
         aml_append(dsdt, scope);
