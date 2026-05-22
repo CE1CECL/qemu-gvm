@@ -28,6 +28,10 @@
  * https://github.com/vmware/open-vm-tools
  */
 
+// #define VERBOSE
+// #define EXP3D
+// #define EXPCAPS
+
 #include "qemu/osdep.h"
 #include "hw/isa/isa.h"
 #include "hw/i386/vmport.h"
@@ -62,6 +66,14 @@
 #define VCPU_INFO_HV_REPLAY_OK_BIT      2
 #define VCPU_INFO_LEGACY_X2APIC_BIT     3
 #define VCPU_INFO_RESERVED_BIT          31
+
+#ifdef VERBOSE
+#define VPRINT(fmt, ...)                                                       \
+  printf("vmport (%s): %u - %s: " fmt, __FILE__, (uint32_t)time(NULL),         \
+         __func__, ##__VA_ARGS__)
+#else
+#define VPRINT(...)
+#endif
 
 OBJECT_DECLARE_SIMPLE_TYPE(VMPortState, VMPORT)
 
@@ -156,8 +168,9 @@ static void vmport_ioport_write(void *opaque, hwaddr addr,
     cpu->env.regs[R_EAX] = vmport_ioport_read(opaque, addr, 4);
 }
 
-static uint32_t vmport_cmd_get_version(void *opaque, uint32_t addr)
+static uint32_t vmport_cmd_getversion(void *opaque, uint32_t addr)
 {
+    VPRINT("vmport_cmd_getversion was just executed\n");
     X86CPU *cpu = X86_CPU(current_cpu);
 
     if (qtest_enabled()) {
@@ -170,8 +183,9 @@ static uint32_t vmport_cmd_get_version(void *opaque, uint32_t addr)
     return port_state->vmware_vmx_version;
 }
 
-static uint32_t vmport_cmd_get_bios_uuid(void *opaque, uint32_t addr)
+static uint32_t vmport_cmd_getuuid(void *opaque, uint32_t addr)
 {
+    VPRINT("vmport_cmd_getuuid was just executed\n");
     X86CPU *cpu = X86_CPU(current_cpu);
     uint32_t *uuid_parts = (uint32_t *)(qemu_uuid.data);
 
@@ -182,8 +196,9 @@ static uint32_t vmport_cmd_get_bios_uuid(void *opaque, uint32_t addr)
     return cpu->env.regs[R_EAX];
 }
 
-static uint32_t vmport_cmd_ram_size(void *opaque, uint32_t addr)
+static uint32_t vmport_cmd_getmemsize(void *opaque, uint32_t addr)
 {
+    VPRINT("vmport_cmd_getmemsize was just executed\n");
     X86CPU *cpu = X86_CPU(current_cpu);
 
     if (qtest_enabled()) {
@@ -193,8 +208,9 @@ static uint32_t vmport_cmd_ram_size(void *opaque, uint32_t addr)
     return current_machine->ram_size >> 20; /* in MB */
 }
 
-static uint32_t vmport_cmd_get_hz(void *opaque, uint32_t addr)
+static uint32_t vmport_cmd_gethz(void *opaque, uint32_t addr)
 {
+    VPRINT("vmport_cmd_gethz was just executed\n");
     X86CPU *cpu = X86_CPU(current_cpu);
 
     if (cpu->env.tsc_khz && cpu->env.apic_bus_freq) {
@@ -213,6 +229,7 @@ static uint32_t vmport_cmd_get_hz(void *opaque, uint32_t addr)
 
 static uint32_t vmport_cmd_get_vcpu_info(void *opaque, uint32_t addr)
 {
+    VPRINT("vmport_cmd_get_vcpu_info was just executed\n");
     X86CPU *cpu = X86_CPU(current_cpu);
     uint32_t ret = 0;
 
@@ -222,9 +239,1065 @@ static uint32_t vmport_cmd_get_vcpu_info(void *opaque, uint32_t addr)
 
     return ret;
 }
-
-static uint32_t vmport_cmd_unknown(void *opaque, uint32_t addr)
+static uint32_t vmport_cmd_abspointer_command(void *opaque, uint32_t addr)
 {
+    VPRINT("vmport_cmd_abspointer_command was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_abspointer_data(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_abspointer_data was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_abspointer_restrict(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_abspointer_restrict was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_abspointer_status(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_abspointer_status was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_acpi_hotplug_cbret(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_acpi_hotplug_cbret was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_acpi_hotplug_cpu(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_acpi_hotplug_cpu was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_acpi_hotplug_device(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_acpi_hotplug_device was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_acpi_hotplug_memory(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_acpi_hotplug_memory was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_apmfunction(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_apmfunction was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_apple_gpu_res_set(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_apple_gpu_res_set was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_biosbbs(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_biosbbs was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_bug328986(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_bug328986 was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_checkforcebiossetup(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_checkforcebiossetup was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_copy_physmem(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_copy_physmem was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_coredump_unsync(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_coredump_unsync was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_debugevent(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_debugevent was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_devel_fakehardware(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_devel_fakehardware was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_efi_boot_config(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_efi_boot_config was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_efi_serialcon_config(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_efi_serialcon_config was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_enable_msg(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_enable_msg was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_enable_usb_mouse(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_enable_usb_mouse was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_firmware_acpi_services(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_firmware_acpi_services was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_firmware_error(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_firmware_error was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_firmware_init(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_firmware_init was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_firmware_update(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_firmware_update was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_fuzzer_helper(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_fuzzer_helper was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_getbuildnum(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_getbuildnum was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_getdevicelistelement(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_getdevicelistelement was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_getdiskgeo(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_getdiskgeo was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_getentropy(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_getentropy was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_getguioptions(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_getguioptions was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_gethwversion(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_gethwversion was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_getmhz(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_getmhz was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_getnextpiece(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_getnextpiece was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_getptrlocation(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_getptrlocation was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_getscreensize(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_getscreensize was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_getsellength(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_getsellength was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_gettime(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_gettime was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_gettimefull(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_gettimefull was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_gettimefull_with_lag(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_gettimefull_with_lag was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_get_force_x2apic(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_get_force_x2apic was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_get_host_video_modes(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_get_host_video_modes was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_get_hw_model(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_get_hw_model was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_get_pci_bar(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_get_pci_bar was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_get_pci_hole(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_get_pci_hole was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_gmm(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_gmm was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_goto_tcl(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_goto_tcl was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_guest_integrity(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_guest_integrity was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_guest_page_hints(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_guest_page_hints was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_hostcopy(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_hostcopy was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_initpcioprom(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_initpcioprom was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_inject_key(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_inject_key was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_inject_mouse(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_inject_mouse was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_int13(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_int13 was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_isacpidisabled(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_isacpidisabled was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_isgosdarwin(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_isgosdarwin was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_ismouseabsolute(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_ismouseabsolute was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_lazytimeremulation(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_lazytimeremulation was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_mapmem(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_mapmem was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_max(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_max was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_message(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_message was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_mkstest(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_mkstest was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_mks_guest_stats(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_mks_guest_stats was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_monitor_control(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_monitor_control was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_nesting_control(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_nesting_control was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_osnotfound(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_osnotfound was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_osnotmacosxserver(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_osnotmacosxserver was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_patch_acpi_tables(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_patch_acpi_tables was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_patch_smbios_structs(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_patch_smbios_structs was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_precisionclock(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_precisionclock was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_putchr(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_putchr was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_putchr12(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_putchr12 was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_read_debug_file(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_read_debug_file was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_reportguestcrash(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_reportguestcrash was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_screenshot(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_screenshot was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_secureboot(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_secureboot was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_sendpsharehints(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_sendpsharehints was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_service_vm(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_service_vm was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_setguioptions(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_setguioptions was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_setnextpiece(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_setnextpiece was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_setptrlocation(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_setptrlocation was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_setsellength(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_setsellength was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_set_pci_hole(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_set_pci_hole was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_sgdt(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_sgdt was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_should_generate_systemid(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_should_generate_systemid was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_sidt(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_sidt was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_sldt_str(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_sldt_str was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_statelogger(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_statelogger was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_stealclock(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_stealclock was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_stopcatchup(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_stopcatchup was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_timer_sponge(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_timer_sponge was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_toe(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_toe was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_toggledevice(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_toggledevice was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_usb_hotplug_mouse(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_usb_hotplug_mouse was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_vassert(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_vassert was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_vmk_info(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_vmk_info was just executed\n");
+    X86CPU *cpu = X86_CPU(current_cpu);
+    cpu->env.regs[R_EAX] = -2;
+    cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = -2;
+    cpu->env.regs[R_EDX] = -2;
+    return -2;
+}
+
+static uint32_t vmport_cmd_xpmode(void *opaque, uint32_t addr)
+{
+    VPRINT("vmport_cmd_xpmode was just executed\n");
     X86CPU *cpu = X86_CPU(current_cpu);
     cpu->env.regs[R_EAX] = -2;
     cpu->env.regs[R_EBX] = VMPORT_MAGIC;
@@ -249,11 +1322,9 @@ typedef enum {
 
 */
 
-// #define EXP3D
-// #define EXPCAPS
-
-static uint32_t vmport_cmd_svgacaps(void *opaque, uint32_t addr)
+static uint32_t vmport_cmd_get_svga_capabilities(void *opaque, uint32_t addr)
 {
+    VPRINT("vmport_cmd_get_svga_capabilities was just executed\n");
     X86CPU *cpu = X86_CPU(current_cpu);
     uint32_t ret = 0;
     switch ((cpu->env.regs[R_ECX] >> 16) & 0xffff) {
@@ -289,6 +1360,8 @@ static uint32_t vmport_cmd_svgacaps(void *opaque, uint32_t addr)
     }
     cpu->env.regs[R_EAX] = ret;
     cpu->env.regs[R_EBX] = VMPORT_MAGIC;
+    cpu->env.regs[R_ECX] = 0;
+    cpu->env.regs[R_EDX] = 0;
     return ret;
 }
 
@@ -313,118 +1386,109 @@ static void vmport_realizefn(DeviceState *dev, Error **errp)
     port_state = s;
 
     /* Register some generic port commands */
-    vmport_register(VMPORT_CMD_GETVERSION, vmport_cmd_get_version, NULL);
-    vmport_register(VMPORT_CMD_GETMEMSIZE, vmport_cmd_ram_size, NULL);
-    if (s->compat_flags & VMPORT_COMPAT_CMDS_V2) {
-        vmport_register(VMPORT_CMD_GETUUID, vmport_cmd_get_bios_uuid, NULL);
-        vmport_register(VMPORT_CMD_GETHZ, vmport_cmd_get_hz, NULL);
-        vmport_register(VMPORT_CMD_GET_VCPU_INFO, vmport_cmd_get_vcpu_info,
-                        NULL);
-    }
-    vmport_register(VMPORT_CMD_GET_SVGA_CAPABILITIES, vmport_cmd_svgacaps, NULL);
-    vmport_register(VMPORT_CMD_GETMHZ, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_APMFUNCTION, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETDISKGEO, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETPTRLOCATION, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SETPTRLOCATION, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETSELLENGTH, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETNEXTPIECE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SETSELLENGTH, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SETNEXTPIECE, vmport_cmd_unknown, NULL);
-    // vmport_register(VMPORT_CMD_GETVERSION, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETDEVICELISTELEMENT, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_TOGGLEDEVICE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETGUIOPTIONS, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SETGUIOPTIONS, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETSCREENSIZE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_MONITOR_CONTROL, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETHWVERSION, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_OSNOTFOUND, vmport_cmd_unknown, NULL);
-    // vmport_register(VMPORT_CMD_GETUUID, vmport_cmd_unknown, NULL);
-    // vmport_register(VMPORT_CMD_GETMEMSIZE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_HOSTCOPY, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SERVICE_VM, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETTIME, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_STOPCATCHUP, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_PUTCHR, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_ENABLE_MSG, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GOTO_TCL, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_INITPCIOPROM, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_INT13, vmport_cmd_unknown, NULL);
-    // vmport_register(VMPORT_CMD_MESSAGE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SIDT, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SGDT, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SLDT_STR, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_ISACPIDISABLED, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_TOE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_ISMOUSEABSOLUTE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_PATCH_SMBIOS_STRUCTS, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_MAPMEM, vmport_cmd_unknown, NULL);
-    // vmport_register(VMPORT_CMD_ABSPOINTER_DATA, vmport_cmd_unknown, NULL);
-    // vmport_register(VMPORT_CMD_ABSPOINTER_STATUS, vmport_cmd_unknown, NULL);
-    // vmport_register(VMPORT_CMD_ABSPOINTER_COMMAND, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_TIMER_SPONGE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_PATCH_ACPI_TABLES, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_DEVEL_FAKEHARDWARE, vmport_cmd_unknown, NULL);
-    // vmport_register(VMPORT_CMD_GETHZ, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETTIMEFULL, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_STATELOGGER, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_CHECKFORCEBIOSSETUP, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_LAZYTIMEREMULATION, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_BIOSBBS, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_VASSERT, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_ISGOSDARWIN, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_DEBUGEVENT, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_OSNOTMACOSXSERVER, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETTIMEFULL_WITH_LAG, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_ACPI_HOTPLUG_DEVICE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_ACPI_HOTPLUG_MEMORY, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_ACPI_HOTPLUG_CBRET, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GET_HOST_VIDEO_MODES, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_ACPI_HOTPLUG_CPU, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_USB_HOTPLUG_MOUSE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_XPMODE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_NESTING_CONTROL, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_FIRMWARE_INIT, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_FIRMWARE_ACPI_SERVICES, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SENDPSHAREHINTS, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_ENABLE_USB_MOUSE, vmport_cmd_unknown, NULL);
-    // vmport_register(VMPORT_CMD_GET_VCPU_INFO, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_EFI_SERIALCON_CONFIG, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_BUG328986, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_FIRMWARE_ERROR, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_VMK_INFO, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_EFI_BOOT_CONFIG, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GET_HW_MODEL, vmport_cmd_unknown, NULL);
-    // vmport_register(VMPORT_CMD_GET_SVGA_CAPABILITIES, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GET_FORCE_X2APIC, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SET_PCI_HOLE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GET_PCI_HOLE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GET_PCI_BAR, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SHOULD_GENERATE_SYSTEMID, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_READ_DEBUG_FILE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SCREENSHOT, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_INJECT_KEY, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_INJECT_MOUSE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_MKS_GUEST_STATS, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_ABSPOINTER_RESTRICT, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GUEST_INTEGRITY, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_MKSTEST, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_SECUREBOOT, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_COPY_PHYSMEM, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_STEALCLOCK, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GUEST_PAGE_HINTS, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_FIRMWARE_UPDATE, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_FUZZER_HELPER, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_PUTCHR12, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GMM, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_PRECISIONCLOCK, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_COREDUMP_UNSYNC, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_APPLE_GPU_RES_SET, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETBUILDNUM, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_GETENTROPY, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_REPORTGUESTCRASH, vmport_cmd_unknown, NULL);
-    vmport_register(VMPORT_CMD_MAX, vmport_cmd_unknown, NULL);
+    vmport_register(VMPORT_CMD_ABSPOINTER_COMMAND, vmport_cmd_abspointer_command, NULL);
+    vmport_register(VMPORT_CMD_ABSPOINTER_DATA, vmport_cmd_abspointer_data, NULL);
+    vmport_register(VMPORT_CMD_ABSPOINTER_RESTRICT, vmport_cmd_abspointer_restrict, NULL);
+    vmport_register(VMPORT_CMD_ABSPOINTER_STATUS, vmport_cmd_abspointer_status, NULL);
+    vmport_register(VMPORT_CMD_ACPI_HOTPLUG_CBRET, vmport_cmd_acpi_hotplug_cbret, NULL);
+    vmport_register(VMPORT_CMD_ACPI_HOTPLUG_CPU, vmport_cmd_acpi_hotplug_cpu, NULL);
+    vmport_register(VMPORT_CMD_ACPI_HOTPLUG_DEVICE, vmport_cmd_acpi_hotplug_device, NULL);
+    vmport_register(VMPORT_CMD_ACPI_HOTPLUG_MEMORY, vmport_cmd_acpi_hotplug_memory, NULL);
+    vmport_register(VMPORT_CMD_APMFUNCTION, vmport_cmd_apmfunction, NULL);
+    vmport_register(VMPORT_CMD_APPLE_GPU_RES_SET, vmport_cmd_apple_gpu_res_set, NULL);
+    vmport_register(VMPORT_CMD_BIOSBBS, vmport_cmd_biosbbs, NULL);
+    vmport_register(VMPORT_CMD_BUG328986, vmport_cmd_bug328986, NULL);
+    vmport_register(VMPORT_CMD_CHECKFORCEBIOSSETUP, vmport_cmd_checkforcebiossetup, NULL);
+    vmport_register(VMPORT_CMD_COPY_PHYSMEM, vmport_cmd_copy_physmem, NULL);
+    vmport_register(VMPORT_CMD_COREDUMP_UNSYNC, vmport_cmd_coredump_unsync, NULL);
+    vmport_register(VMPORT_CMD_DEBUGEVENT, vmport_cmd_debugevent, NULL);
+    vmport_register(VMPORT_CMD_DEVEL_FAKEHARDWARE, vmport_cmd_devel_fakehardware, NULL);
+    vmport_register(VMPORT_CMD_EFI_BOOT_CONFIG, vmport_cmd_efi_boot_config, NULL);
+    vmport_register(VMPORT_CMD_EFI_SERIALCON_CONFIG, vmport_cmd_efi_serialcon_config, NULL);
+    vmport_register(VMPORT_CMD_ENABLE_MSG, vmport_cmd_enable_msg, NULL);
+    vmport_register(VMPORT_CMD_ENABLE_USB_MOUSE, vmport_cmd_enable_usb_mouse, NULL);
+    vmport_register(VMPORT_CMD_FIRMWARE_ACPI_SERVICES, vmport_cmd_firmware_acpi_services, NULL);
+    vmport_register(VMPORT_CMD_FIRMWARE_ERROR, vmport_cmd_firmware_error, NULL);
+    vmport_register(VMPORT_CMD_FIRMWARE_INIT, vmport_cmd_firmware_init, NULL);
+    vmport_register(VMPORT_CMD_FIRMWARE_UPDATE, vmport_cmd_firmware_update, NULL);
+    vmport_register(VMPORT_CMD_FUZZER_HELPER, vmport_cmd_fuzzer_helper, NULL);
+    vmport_register(VMPORT_CMD_GETBUILDNUM, vmport_cmd_getbuildnum, NULL);
+    vmport_register(VMPORT_CMD_GETDEVICELISTELEMENT, vmport_cmd_getdevicelistelement, NULL);
+    vmport_register(VMPORT_CMD_GETDISKGEO, vmport_cmd_getdiskgeo, NULL);
+    vmport_register(VMPORT_CMD_GETENTROPY, vmport_cmd_getentropy, NULL);
+    vmport_register(VMPORT_CMD_GETGUIOPTIONS, vmport_cmd_getguioptions, NULL);
+    vmport_register(VMPORT_CMD_GETHWVERSION, vmport_cmd_gethwversion, NULL);
+    vmport_register(VMPORT_CMD_GETHZ, vmport_cmd_gethz, NULL);
+    vmport_register(VMPORT_CMD_GETMEMSIZE, vmport_cmd_getmemsize, NULL);
+    vmport_register(VMPORT_CMD_GETMHZ, vmport_cmd_getmhz, NULL);
+    vmport_register(VMPORT_CMD_GETNEXTPIECE, vmport_cmd_getnextpiece, NULL);
+    vmport_register(VMPORT_CMD_GETPTRLOCATION, vmport_cmd_getptrlocation, NULL);
+    vmport_register(VMPORT_CMD_GETSCREENSIZE, vmport_cmd_getscreensize, NULL);
+    vmport_register(VMPORT_CMD_GETSELLENGTH, vmport_cmd_getsellength, NULL);
+    vmport_register(VMPORT_CMD_GETTIME, vmport_cmd_gettime, NULL);
+    vmport_register(VMPORT_CMD_GETTIMEFULL, vmport_cmd_gettimefull, NULL);
+    vmport_register(VMPORT_CMD_GETTIMEFULL_WITH_LAG, vmport_cmd_gettimefull_with_lag, NULL);
+    vmport_register(VMPORT_CMD_GETUUID, vmport_cmd_getuuid, NULL);
+    vmport_register(VMPORT_CMD_GETVERSION, vmport_cmd_getversion, NULL);
+    vmport_register(VMPORT_CMD_GET_FORCE_X2APIC, vmport_cmd_get_force_x2apic, NULL);
+    vmport_register(VMPORT_CMD_GET_HOST_VIDEO_MODES, vmport_cmd_get_host_video_modes, NULL);
+    vmport_register(VMPORT_CMD_GET_HW_MODEL, vmport_cmd_get_hw_model, NULL);
+    vmport_register(VMPORT_CMD_GET_PCI_BAR, vmport_cmd_get_pci_bar, NULL);
+    vmport_register(VMPORT_CMD_GET_PCI_HOLE, vmport_cmd_get_pci_hole, NULL);
+    vmport_register(VMPORT_CMD_GET_SVGA_CAPABILITIES, vmport_cmd_get_svga_capabilities, NULL);
+    vmport_register(VMPORT_CMD_GET_VCPU_INFO, vmport_cmd_get_vcpu_info, NULL);
+    vmport_register(VMPORT_CMD_GMM, vmport_cmd_gmm, NULL);
+    vmport_register(VMPORT_CMD_GOTO_TCL, vmport_cmd_goto_tcl, NULL);
+    vmport_register(VMPORT_CMD_GUEST_INTEGRITY, vmport_cmd_guest_integrity, NULL);
+    vmport_register(VMPORT_CMD_GUEST_PAGE_HINTS, vmport_cmd_guest_page_hints, NULL);
+    vmport_register(VMPORT_CMD_HOSTCOPY, vmport_cmd_hostcopy, NULL);
+    vmport_register(VMPORT_CMD_INITPCIOPROM, vmport_cmd_initpcioprom, NULL);
+    vmport_register(VMPORT_CMD_INJECT_KEY, vmport_cmd_inject_key, NULL);
+    vmport_register(VMPORT_CMD_INJECT_MOUSE, vmport_cmd_inject_mouse, NULL);
+    vmport_register(VMPORT_CMD_INT13, vmport_cmd_int13, NULL);
+    vmport_register(VMPORT_CMD_ISACPIDISABLED, vmport_cmd_isacpidisabled, NULL);
+    vmport_register(VMPORT_CMD_ISGOSDARWIN, vmport_cmd_isgosdarwin, NULL);
+    vmport_register(VMPORT_CMD_ISMOUSEABSOLUTE, vmport_cmd_ismouseabsolute, NULL);
+    vmport_register(VMPORT_CMD_LAZYTIMEREMULATION, vmport_cmd_lazytimeremulation, NULL);
+    vmport_register(VMPORT_CMD_MAPMEM, vmport_cmd_mapmem, NULL);
+    vmport_register(VMPORT_CMD_MAX, vmport_cmd_max, NULL);
+    vmport_register(VMPORT_CMD_MESSAGE, vmport_cmd_message, NULL);
+    vmport_register(VMPORT_CMD_MKSTEST, vmport_cmd_mkstest, NULL);
+    vmport_register(VMPORT_CMD_MKS_GUEST_STATS, vmport_cmd_mks_guest_stats, NULL);
+    vmport_register(VMPORT_CMD_MONITOR_CONTROL, vmport_cmd_monitor_control, NULL);
+    vmport_register(VMPORT_CMD_NESTING_CONTROL, vmport_cmd_nesting_control, NULL);
+    vmport_register(VMPORT_CMD_OSNOTFOUND, vmport_cmd_osnotfound, NULL);
+    vmport_register(VMPORT_CMD_OSNOTMACOSXSERVER, vmport_cmd_osnotmacosxserver, NULL);
+    vmport_register(VMPORT_CMD_PATCH_ACPI_TABLES, vmport_cmd_patch_acpi_tables, NULL);
+    vmport_register(VMPORT_CMD_PATCH_SMBIOS_STRUCTS, vmport_cmd_patch_smbios_structs, NULL);
+    vmport_register(VMPORT_CMD_PRECISIONCLOCK, vmport_cmd_precisionclock, NULL);
+    vmport_register(VMPORT_CMD_PUTCHR, vmport_cmd_putchr, NULL);
+    vmport_register(VMPORT_CMD_PUTCHR12, vmport_cmd_putchr12, NULL);
+    vmport_register(VMPORT_CMD_READ_DEBUG_FILE, vmport_cmd_read_debug_file, NULL);
+    vmport_register(VMPORT_CMD_REPORTGUESTCRASH, vmport_cmd_reportguestcrash, NULL);
+    vmport_register(VMPORT_CMD_SCREENSHOT, vmport_cmd_screenshot, NULL);
+    vmport_register(VMPORT_CMD_SECUREBOOT, vmport_cmd_secureboot, NULL);
+    vmport_register(VMPORT_CMD_SENDPSHAREHINTS, vmport_cmd_sendpsharehints, NULL);
+    vmport_register(VMPORT_CMD_SERVICE_VM, vmport_cmd_service_vm, NULL);
+    vmport_register(VMPORT_CMD_SETGUIOPTIONS, vmport_cmd_setguioptions, NULL);
+    vmport_register(VMPORT_CMD_SETNEXTPIECE, vmport_cmd_setnextpiece, NULL);
+    vmport_register(VMPORT_CMD_SETPTRLOCATION, vmport_cmd_setptrlocation, NULL);
+    vmport_register(VMPORT_CMD_SETSELLENGTH, vmport_cmd_setsellength, NULL);
+    vmport_register(VMPORT_CMD_SET_PCI_HOLE, vmport_cmd_set_pci_hole, NULL);
+    vmport_register(VMPORT_CMD_SGDT, vmport_cmd_sgdt, NULL);
+    vmport_register(VMPORT_CMD_SHOULD_GENERATE_SYSTEMID, vmport_cmd_should_generate_systemid, NULL);
+    vmport_register(VMPORT_CMD_SIDT, vmport_cmd_sidt, NULL);
+    vmport_register(VMPORT_CMD_SLDT_STR, vmport_cmd_sldt_str, NULL);
+    vmport_register(VMPORT_CMD_STATELOGGER, vmport_cmd_statelogger, NULL);
+    vmport_register(VMPORT_CMD_STEALCLOCK, vmport_cmd_stealclock, NULL);
+    vmport_register(VMPORT_CMD_STOPCATCHUP, vmport_cmd_stopcatchup, NULL);
+    vmport_register(VMPORT_CMD_TIMER_SPONGE, vmport_cmd_timer_sponge, NULL);
+    vmport_register(VMPORT_CMD_TOE, vmport_cmd_toe, NULL);
+    vmport_register(VMPORT_CMD_TOGGLEDEVICE, vmport_cmd_toggledevice, NULL);
+    vmport_register(VMPORT_CMD_USB_HOTPLUG_MOUSE, vmport_cmd_usb_hotplug_mouse, NULL);
+    vmport_register(VMPORT_CMD_VASSERT, vmport_cmd_vassert, NULL);
+    vmport_register(VMPORT_CMD_VMK_INFO, vmport_cmd_vmk_info, NULL);
+    vmport_register(VMPORT_CMD_XPMODE, vmport_cmd_xpmode, NULL);
 }
 
 static Property vmport_properties[] = {
