@@ -353,15 +353,11 @@ static void pc_q35_init(MachineState *machine)
 static void pc_q35_machine_options(MachineClass *m)
 {
     PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
-    pcmc->default_nic_model = "e1000e";
     pcmc->pci_root_uid = 0;
 
     m->family = "pc_q35";
     m->desc = "Standard PC (Q35 + ICH9, 2009)";
     m->units_per_default_bus = 1;
-    m->default_machine_opts = "firmware=bios-256k.bin";
-    m->default_display = "vmware";
-    m->default_kernel_irqchip_split = false;
     m->no_floppy = 1;
     machine_class_allow_dynamic_sysbus_dev(m, TYPE_AMD_IOMMU_DEVICE);
     machine_class_allow_dynamic_sysbus_dev(m, TYPE_INTEL_IOMMU_DEVICE);
@@ -375,7 +371,6 @@ static void pc_q35_7_1_machine_options(MachineClass *m)
     PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
     pc_q35_machine_options(m);
     m->alias = "q35";
-    pcmc->default_cpu_version = 1;
     pcmc->legacy_no_rng_seed = true;
 }
 
@@ -495,7 +490,6 @@ static void pc_q35_4_0_1_machine_options(MachineClass *m)
     PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
     pc_q35_4_1_machine_options(m);
     m->alias = NULL;
-    pcmc->default_cpu_version = CPU_VERSION_LEGACY;
     /*
      * This is the default machine for the 4.0-stable branch. It is basically
      * a 4.0 that doesn't use split irqchip by default. It MUST hence apply the
@@ -511,7 +505,6 @@ DEFINE_Q35_MACHINE(v4_0_1, "pc-q35-4.0.1", NULL,
 static void pc_q35_4_0_machine_options(MachineClass *m)
 {
     pc_q35_4_0_1_machine_options(m);
-    m->default_kernel_irqchip_split = true;
     m->alias = NULL;
     /* Compat props are applied by the 4.0.1 machine */
 }
@@ -524,7 +517,6 @@ static void pc_q35_3_1_machine_options(MachineClass *m)
     PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
 
     pc_q35_4_0_machine_options(m);
-    m->default_kernel_irqchip_split = false;
     m->smbus_no_migration_support = true;
     m->alias = NULL;
     pcmc->pvh_enabled = false;
@@ -560,7 +552,6 @@ static void pc_q35_2_11_machine_options(MachineClass *m)
     PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
 
     pc_q35_2_12_machine_options(m);
-    pcmc->default_nic_model = "e1000";
     compat_props_add(m->compat_props, hw_compat_2_11, hw_compat_2_11_len);
     compat_props_add(m->compat_props, pc_compat_2_11, pc_compat_2_11_len);
 }

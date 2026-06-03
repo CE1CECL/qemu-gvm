@@ -421,14 +421,11 @@ static void pc_xen_hvm_init(MachineState *machine)
 static void pc_i440fx_machine_options(MachineClass *m)
 {
     PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
-    pcmc->default_nic_model = "e1000";
     pcmc->pci_root_uid = 0;
 
     m->family = "pc_piix";
     m->desc = "Standard PC (i440FX + PIIX, 1996)";
-    m->default_machine_opts = "firmware=bios-256k.bin";
-    m->default_display = "vmware";
-    m->no_floppy = 1;
+    m->no_floppy = 0;
     machine_class_allow_dynamic_sysbus_dev(m, TYPE_RAMFB_DEVICE);
     machine_class_allow_dynamic_sysbus_dev(m, TYPE_VMBUS_BRIDGE);
 }
@@ -439,7 +436,6 @@ static void pc_i440fx_7_1_machine_options(MachineClass *m)
     pc_i440fx_machine_options(m);
     m->alias = "pc";
     m->is_default = true;
-    pcmc->default_cpu_version = 1;
     pcmc->legacy_no_rng_seed = true;
 }
 
@@ -569,7 +565,6 @@ static void pc_i440fx_4_0_machine_options(MachineClass *m)
     pc_i440fx_4_1_machine_options(m);
     m->alias = NULL;
     m->is_default = false;
-    pcmc->default_cpu_version = CPU_VERSION_LEGACY;
     compat_props_add(m->compat_props, hw_compat_4_0, hw_compat_4_0_len);
     compat_props_add(m->compat_props, pc_compat_4_0, pc_compat_4_0_len);
 }
@@ -724,7 +719,6 @@ static void pc_i440fx_2_2_machine_options(MachineClass *m)
 
     pc_i440fx_2_3_machine_options(m);
     m->hw_version = "2.2.0";
-    m->default_machine_opts = "firmware=bios-256k.bin,suppress-vmdesc=on";
     compat_props_add(m->compat_props, hw_compat_2_2, hw_compat_2_2_len);
     compat_props_add(m->compat_props, pc_compat_2_2, pc_compat_2_2_len);
     pcmc->rsdp_in_ram = false;
@@ -739,7 +733,6 @@ static void pc_i440fx_2_1_machine_options(MachineClass *m)
 
     pc_i440fx_2_2_machine_options(m);
     m->hw_version = "2.1.0";
-    m->default_display = NULL;
     compat_props_add(m->compat_props, hw_compat_2_1, hw_compat_2_1_len);
     compat_props_add(m->compat_props, pc_compat_2_1, pc_compat_2_1_len);
     pcmc->smbios_uuid_encoded = false;
@@ -787,7 +780,6 @@ static void pc_i440fx_1_7_machine_options(MachineClass *m)
 
     pc_i440fx_2_0_machine_options(m);
     m->hw_version = "1.7.0";
-    m->default_machine_opts = NULL;
     m->option_rom_has_mr = true;
     m->deprecation_reason = "old and unattended - use a newer version instead";
     compat_props_add(m->compat_props, pc_compat_1_7, pc_compat_1_7_len);
@@ -847,8 +839,6 @@ static void isapc_machine_options(MachineClass *m)
     pcmc->gigabyte_align = false;
     pcmc->smbios_legacy_mode = true;
     pcmc->has_reserved_memory = false;
-    pcmc->default_nic_model = "ne2k_isa";
-    m->default_cpu_type = X86_CPU_TYPE_NAME("486");
 }
 
 DEFINE_PC_MACHINE(isapc, "isapc", pc_init_isa,
@@ -861,7 +851,6 @@ static void xenfv_4_2_machine_options(MachineClass *m)
     pc_i440fx_4_2_machine_options(m);
     m->desc = "Xen Fully-virtualized PC";
     m->max_cpus = HVM_MAX_VCPUS;
-    m->default_machine_opts = "accel=xen,suppress-vmdesc=on";
 }
 
 DEFINE_PC_MACHINE(xenfv_4_2, "xenfv-4.2", pc_xen_hvm_init,
@@ -873,7 +862,6 @@ static void xenfv_3_1_machine_options(MachineClass *m)
     m->desc = "Xen Fully-virtualized PC";
     m->alias = "xenfv";
     m->max_cpus = HVM_MAX_VCPUS;
-    m->default_machine_opts = "accel=xen,suppress-vmdesc=on";
 }
 
 DEFINE_PC_MACHINE(xenfv, "xenfv-3.1", pc_xen_hvm_init,
