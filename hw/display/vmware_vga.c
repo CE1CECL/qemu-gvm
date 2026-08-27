@@ -59,32 +59,51 @@
 #include "migration/vmstate.h"
 #include "vga_int.h"
 #include "include/VGPU10ShaderTokens.h" // Required to be the last #include
-#define SVGA_CAP_UNKNOWN_A 0x00000001
-#define SVGA_CAP_UNKNOWN_B 0x00000004
-#define SVGA_CAP_UNKNOWN_C 0x00000008
-#define SVGA_CAP_UNKNOWN_D 0x00000010
-#define SVGA_CAP_UNKNOWN_E 0x00000400
-#define SVGA_CAP_UNKNOWN_F 0x00000800
-#define SVGA_CAP_UNKNOWN_G 0x00001000
-#define SVGA_CAP_UNKNOWN_H 0x00002000
+#define SVGA_CAP_ALPHA_BLEND 0x00002000
+#define SVGA_CAP_GLYPH 0x00000400
+#define SVGA_CAP_GLYPH_CLIPPING 0x00000800
 #define SVGA_CAP_HP_CMD_QUEUE 0x20000000
+#define SVGA_CAP_LEGACY_OFFSCREEN 0x00000008
 #define SVGA_CAP_NO_BB_RESTRICTION 0x40000000
-#define SVGA_PIXMAP_SIZE(w, h, bpp) (((((w) * (bpp))) >> 5) * (h))
-#define SVGA_CMD_RECT_FILL 2
+#define SVGA_CAP_OFFSCREEN_1 0x00001000
+#define SVGA_CAP_RASTER_OP 0x00000010
+#define SVGA_CAP_RECT_FILL 0x00000001
+#define SVGA_CAP_RECT_PAT_FILL 0x00000004
+#define SVGA_CMD_DEFINE_BITMAP 4
+#define SVGA_CMD_DEFINE_BITMAP_SCANLINE 5
+#define SVGA_CMD_DEFINE_PIXMAP 6
+#define SVGA_CMD_DEFINE_PIXMAP_SCANLINE 7
 #define SVGA_CMD_DISPLAY_CURSOR 20
+#define SVGA_CMD_DRAW_GLYPH 23
+#define SVGA_CMD_DRAW_GLYPH_CLIPPED 24
+#define SVGA_CMD_FREE_OBJECT 12
 #define SVGA_CMD_MOVE_CURSOR 21
-#define SVGA_REG_CURSOR_MOBID 65
+#define SVGA_CMD_RECT_BITMAP_COPY 10
+#define SVGA_CMD_RECT_BITMAP_FILL 8
+#define SVGA_CMD_RECT_FILL 2
+#define SVGA_CMD_RECT_PIXMAP_COPY 11
+#define SVGA_CMD_RECT_PIXMAP_FILL 9
+#define SVGA_CMD_RECT_ROP_BITMAP_COPY 17
+#define SVGA_CMD_RECT_ROP_BITMAP_FILL 15
+#define SVGA_CMD_RECT_ROP_FILL 13
+#define SVGA_CMD_RECT_ROP_PIXMAP_COPY 18
+#define SVGA_CMD_RECT_ROP_PIXMAP_FILL 16
+#define SVGA_CMD_SURFACE_ALPHA_BLEND 28
+#define SVGA_CMD_SURFACE_COPY 27
+#define SVGA_CMD_SURFACE_FILL 26
+#define SVGA_PALETTE_SIZE 769
+#define SVGA_PIXMAP_SIZE(w, h, bpp) (((((w) * (bpp))) >> 5) * (h))
 #define SVGA_REG_CURSOR_MAX_BYTE_SIZE 66
 #define SVGA_REG_CURSOR_MAX_DIMENSION 67
-#define SVGA_REG_FIFO_CAPS 68
+#define SVGA_REG_CURSOR_MOBID 65
 #define SVGA_REG_FENCE 69
-#define SVGA_REG_SCREENDMA 75
-#define SVGA_REG_GBOBJECT_MEM_SIZE_KB 76
 #define SVGA_REG_FENCE_GOAL 84
+#define SVGA_REG_FIFO_CAPS 68
+#define SVGA_REG_GBOBJECT_MEM_SIZE_KB 76
 #define SVGA_REG_MSHINT 81
-#define SVGA_PALETTE_SIZE 769
-#define SVGA_REG_PALETTE_MIN 1024
 #define SVGA_REG_PALETTE_MAX (SVGA_REG_PALETTE_MIN + SVGA_PALETTE_SIZE)
+#define SVGA_REG_PALETTE_MIN 1024
+#define SVGA_REG_SCREENDMA 75
 #ifdef VERBOSE
 #define VPRINT(fmt, ...)                                                       \
   printf("vmsvga (%s): %u - %s: " fmt, __FILE__, (uint32_t)time(NULL),         \
@@ -264,19 +283,187 @@ static inline uint32_t vmsvga_fifo_read(struct vmsvga_state_s *s) {
   return ret;
 };
 typedef struct {
-  uint32_t pixel;
-  uint32_t destX;
-  uint32_t destY;
-  uint32_t width;
-  uint32_t height;
+  uint32 color;
+  uint32 x;
+  uint32 y;
+  uint32 width;
+  uint32 height;
 } SVGAFifoCmdRectFill;
 typedef struct {
-  uint32_t id;
-  uint32_t state;
+  uint32 bitmapId;
+  uint32 width;
+  uint32 height;
+} SVGAFifoCmdDefineBitmap;
+typedef struct {
+  uint32 bitmapId;
+  uint32 width;
+  uint32 height;
+  uint32 lineNumber;
+} SVGAFifoCmdDefineBitmapScanline;
+typedef struct {
+  uint32 pixmapId;
+  uint32 width;
+  uint32 height;
+  uint32 depth;
+} SVGAFifoCmdDefinePixmap;
+typedef struct {
+  uint32 pixmapId;
+  uint32 width;
+  uint32 height;
+  uint32 depth;
+  uint32 lineNumber;
+} SVGAFifoCmdDefinePixmapScanline;
+typedef struct {
+  uint32 bitmapId;
+  uint32 x;
+  uint32 y;
+  uint32 width;
+  uint32 height;
+  uint32 foreground;
+  uint32 background;
+} SVGAFifoCmdRectBitmapFill;
+typedef struct {
+  uint32 pixmapId;
+  uint32 x;
+  uint32 y;
+  uint32 width;
+  uint32 height;
+} SVGAFifoCmdRectPixmapFill;
+typedef struct {
+  uint32 bitmapId;
+  uint32 srcX;
+  uint32 srcY;
+  uint32 destX;
+  uint32 destY;
+  uint32 width;
+  uint32 height;
+  uint32 foreground;
+  uint32 background;
+} SVGAFifoCmdRectBitmapCopy;
+typedef struct {
+  uint32 pixmapId;
+  uint32 srcX;
+  uint32 srcY;
+  uint32 destX;
+  uint32 destY;
+  uint32 width;
+  uint32 height;
+} SVGAFifoCmdRectPixmapCopy;
+typedef struct {
+  uint32 id;
+} SVGAFifoCmdFreeObject;
+typedef struct {
+  uint32 color;
+  uint32 x;
+  uint32 y;
+  uint32 width;
+  uint32 height;
+  uint32 rop;
+} SVGAFifoCmdRectRopFill;
+typedef struct {
+  uint32 bitmapId;
+  uint32 x;
+  uint32 y;
+  uint32 width;
+  uint32 height;
+  uint32 foreground;
+  uint32 background;
+  uint32 rop;
+} SVGAFifoCmdRectRopBitmapFill;
+typedef struct {
+  uint32 pixmapId;
+  uint32 x;
+  uint32 y;
+  uint32 width;
+  uint32 height;
+  uint32 rop;
+} SVGAFifoCmdRectRopPixmapFill;
+typedef struct {
+  uint32 bitmapId;
+  uint32 srcX;
+  uint32 srcY;
+  uint32 destX;
+  uint32 destY;
+  uint32 width;
+  uint32 height;
+  uint32 foreground;
+  uint32 background;
+  uint32 rop;
+} SVGAFifoCmdRectRopBitmapCopy;
+typedef struct {
+  uint32 pixmapId;
+  uint32 srcX;
+  uint32 srcY;
+  uint32 destX;
+  uint32 destY;
+  uint32 width;
+  uint32 height;
+  uint32 rop;
+} SVGAFifoCmdRectRopPixmapCopy;
+typedef struct {
+  uint32 id;
+  uint32 display;
 } SVGAFifoCmdDisplayCursor;
 typedef struct {
-  SVGASignedPoint pos;
+  uint32 x;
+  uint32 y;
 } SVGAFifoCmdMoveCursor;
+typedef struct {
+  uint32 x;
+  uint32 y;
+  uint32 w;
+  uint32 h;
+  uint32 fgColor;
+} SVGAFifoCmdDrawGlyph;
+typedef struct {
+  uint32 x;
+  uint32 y;
+  uint32 w;
+  uint32 h;
+  uint32 fgColor;
+  uint32 bgColor;
+  uint32 clipX;
+  uint32 clipY;
+  uint32 clipW;
+  uint32 clipH;
+} SVGAFifoCmdDrawGlyphClipped;
+typedef struct {
+  uint32 color;
+  uint32 dstSurfaceOffset;
+  uint32 x;
+  uint32 y;
+  uint32 width;
+  uint32 height;
+  uint32 rop;
+} SVGAFifoCmdSurfaceFill;
+typedef struct {
+  uint32 srcSurfaceOffset;
+  uint32 dstSurfaceOffset;
+  uint32 srcX;
+  uint32 srcY;
+  uint32 destX;
+  uint32 destY;
+  uint32 width;
+  uint32 height;
+  uint32 rop;
+} SVGAFifoCmdSurfaceCopy;
+typedef struct {
+  uint32 srcSurfaceOffset;
+  uint32 dstSurfaceOffset;
+  uint32 srcX;
+  uint32 srcY;
+  uint32 destX;
+  uint32 destY;
+  uint32 width;
+  uint32 height;
+  uint32 blendOp;
+  uint32 flags;
+  uint32 param1;
+  uint32 param2;
+} SVGAFifoCmdSurfaceAlphaBlend;
+typedef struct {
+  SVGA3dSize size;
+} SVGA3dCmdSize;
 static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
   VPRINT("vmsvga_fifo_run was just executed\n");
   uint32_t args;
@@ -299,6 +486,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -306,11 +494,402 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
       len = 0;
       VPRINT("SVGA_CMD_INVALID_CMD command %u in SVGA command FIFO\n", cmd);
       break;
+    case SVGA_CMD_DEFINE_BITMAP:
+      if (len < (sizeof(SVGAFifoCmdDefineBitmap) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdDefineBitmap) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdDefineBitmap =
+          sizeof(SVGAFifoCmdDefineBitmap) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdDefineBitmap >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdDefineBitmap -= 1;
+      };
+      VPRINT("SVGA_CMD_DEFINE_BITMAP command %u in SVGA command FIFO\n", cmd);
+      break;
+    case SVGA_CMD_DEFINE_BITMAP_SCANLINE:
+      if (len <
+          (sizeof(SVGAFifoCmdDefineBitmapScanline) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdDefineBitmapScanline) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdDefineBitmapScanline =
+          sizeof(SVGAFifoCmdDefineBitmapScanline) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdDefineBitmapScanline >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdDefineBitmapScanline -= 1;
+      };
+      VPRINT(
+          "SVGA_CMD_DEFINE_BITMAP_SCANLINE command %u in SVGA command FIFO\n",
+          cmd);
+      break;
+    case SVGA_CMD_DEFINE_PIXMAP:
+      if (len < (sizeof(SVGAFifoCmdDefinePixmap) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdDefinePixmap) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdDefinePixmap =
+          sizeof(SVGAFifoCmdDefinePixmap) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdDefinePixmap >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdDefinePixmap -= 1;
+      };
+      VPRINT("SVGA_CMD_DEFINE_PIXMAP command %u in SVGA command FIFO\n", cmd);
+      break;
+    case SVGA_CMD_DEFINE_PIXMAP_SCANLINE:
+      if (len <
+          (sizeof(SVGAFifoCmdDefinePixmapScanline) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdDefinePixmapScanline) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdDefinePixmapScanline =
+          sizeof(SVGAFifoCmdDefinePixmapScanline) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdDefinePixmapScanline >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdDefinePixmapScanline -= 1;
+      };
+      VPRINT(
+          "SVGA_CMD_DEFINE_PIXMAP_SCANLINE command %u in SVGA command FIFO\n",
+          cmd);
+      break;
+    case SVGA_CMD_DISPLAY_CURSOR:
+      if (len < (sizeof(SVGAFifoCmdDisplayCursor) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdDisplayCursor) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdDisplayCursor =
+          sizeof(SVGAFifoCmdDisplayCursor) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdDisplayCursor >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdDisplayCursor -= 1;
+      };
+      VPRINT("SVGA_CMD_DISPLAY_CURSOR command %u in SVGA command FIFO\n", cmd);
+      break;
+    case SVGA_CMD_DRAW_GLYPH:
+      if (len < (sizeof(SVGAFifoCmdDrawGlyph) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdDrawGlyph) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdDrawGlyph =
+          sizeof(SVGAFifoCmdDrawGlyph) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdDrawGlyph >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdDrawGlyph -= 1;
+      };
+      VPRINT("SVGA_CMD_DRAW_GLYPH command %u in SVGA command FIFO\n", cmd);
+      break;
+    case SVGA_CMD_DRAW_GLYPH_CLIPPED:
+      if (len < (sizeof(SVGAFifoCmdDrawGlyphClipped) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdDrawGlyphClipped) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdDrawGlyphClipped =
+          sizeof(SVGAFifoCmdDrawGlyphClipped) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdDrawGlyphClipped >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdDrawGlyphClipped -= 1;
+      };
+      VPRINT("SVGA_CMD_DRAW_GLYPH_CLIPPED command %u in SVGA command FIFO\n",
+             cmd);
+      break;
+    case SVGA_CMD_FREE_OBJECT:
+      if (len < (sizeof(SVGAFifoCmdFreeObject) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdFreeObject) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdFreeObject =
+          sizeof(SVGAFifoCmdFreeObject) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdFreeObject >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdFreeObject -= 1;
+      };
+      VPRINT("SVGA_CMD_FREE_OBJECT command %u in SVGA command FIFO\n", cmd);
+      break;
+    case SVGA_CMD_MOVE_CURSOR:
+      if (len < (sizeof(SVGAFifoCmdMoveCursor) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdMoveCursor) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdMoveCursor =
+          sizeof(SVGAFifoCmdMoveCursor) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdMoveCursor >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdMoveCursor -= 1;
+      };
+      VPRINT("SVGA_CMD_MOVE_CURSOR command %u in SVGA command FIFO\n", cmd);
+      break;
+    case SVGA_CMD_RECT_BITMAP_COPY:
+      if (len < (sizeof(SVGAFifoCmdRectBitmapCopy) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdRectBitmapCopy) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdRectBitmapCopy =
+          sizeof(SVGAFifoCmdRectBitmapCopy) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdRectBitmapCopy >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdRectBitmapCopy -= 1;
+      };
+      VPRINT("SVGA_CMD_RECT_BITMAP_COPY command %u in SVGA command FIFO\n",
+             cmd);
+      break;
+    case SVGA_CMD_RECT_BITMAP_FILL:
+      if (len < (sizeof(SVGAFifoCmdRectBitmapFill) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdRectBitmapFill) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdRectBitmapFill =
+          sizeof(SVGAFifoCmdRectBitmapFill) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdRectBitmapFill >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdRectBitmapFill -= 1;
+      };
+      VPRINT("SVGA_CMD_RECT_BITMAP_FILL command %u in SVGA command FIFO\n",
+             cmd);
+      break;
+    case SVGA_CMD_RECT_FILL:
+      if (len < (sizeof(SVGAFifoCmdRectFill) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdRectFill) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdRectFill =
+          sizeof(SVGAFifoCmdRectFill) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdRectFill >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdRectFill -= 1;
+      };
+      VPRINT("SVGA_CMD_RECT_FILL command %u in SVGA command FIFO\n", cmd);
+      break;
+    case SVGA_CMD_RECT_PIXMAP_COPY:
+      if (len < (sizeof(SVGAFifoCmdRectPixmapCopy) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdRectPixmapCopy) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdRectPixmapCopy =
+          sizeof(SVGAFifoCmdRectPixmapCopy) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdRectPixmapCopy >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdRectPixmapCopy -= 1;
+      };
+      VPRINT("SVGA_CMD_RECT_PIXMAP_COPY command %u in SVGA command FIFO\n",
+             cmd);
+      break;
+    case SVGA_CMD_RECT_PIXMAP_FILL:
+      if (len < (sizeof(SVGAFifoCmdRectPixmapFill) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdRectPixmapFill) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdRectPixmapFill =
+          sizeof(SVGAFifoCmdRectPixmapFill) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdRectPixmapFill >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdRectPixmapFill -= 1;
+      };
+      VPRINT("SVGA_CMD_RECT_PIXMAP_FILL command %u in SVGA command FIFO\n",
+             cmd);
+      break;
+    case SVGA_CMD_RECT_ROP_BITMAP_COPY:
+      if (len < (sizeof(SVGAFifoCmdRectRopBitmapCopy) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdRectRopBitmapCopy) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdRectRopBitmapCopy =
+          sizeof(SVGAFifoCmdRectRopBitmapCopy) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdRectRopBitmapCopy >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdRectRopBitmapCopy -= 1;
+      };
+      VPRINT("SVGA_CMD_RECT_ROP_BITMAP_COPY command %u in SVGA command FIFO\n",
+             cmd);
+      break;
+    case SVGA_CMD_RECT_ROP_BITMAP_FILL:
+      if (len < (sizeof(SVGAFifoCmdRectRopBitmapFill) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdRectRopBitmapFill) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdRectRopBitmapFill =
+          sizeof(SVGAFifoCmdRectRopBitmapFill) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdRectRopBitmapFill >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdRectRopBitmapFill -= 1;
+      };
+      VPRINT("SVGA_CMD_RECT_ROP_BITMAP_FILL command %u in SVGA command FIFO\n",
+             cmd);
+      break;
+    case SVGA_CMD_RECT_ROP_FILL:
+      if (len < (sizeof(SVGAFifoCmdRectRopFill) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdRectRopFill) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdRectRopFill =
+          sizeof(SVGAFifoCmdRectRopFill) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdRectRopFill >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdRectRopFill -= 1;
+      };
+      VPRINT("SVGA_CMD_RECT_ROP_FILL command %u in SVGA command FIFO\n", cmd);
+      break;
+    case SVGA_CMD_RECT_ROP_PIXMAP_COPY:
+      if (len < (sizeof(SVGAFifoCmdRectRopPixmapCopy) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdRectRopPixmapCopy) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdRectRopPixmapCopy =
+          sizeof(SVGAFifoCmdRectRopPixmapCopy) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdRectRopPixmapCopy >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdRectRopPixmapCopy -= 1;
+      };
+      VPRINT("SVGA_CMD_RECT_ROP_PIXMAP_COPY command %u in SVGA command FIFO\n",
+             cmd);
+      break;
+    case SVGA_CMD_RECT_ROP_PIXMAP_FILL:
+      if (len < (sizeof(SVGAFifoCmdRectRopPixmapFill) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdRectRopPixmapFill) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdRectRopPixmapFill =
+          sizeof(SVGAFifoCmdRectRopPixmapFill) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdRectRopPixmapFill >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdRectRopPixmapFill -= 1;
+      };
+      VPRINT("SVGA_CMD_RECT_ROP_PIXMAP_FILL command %u in SVGA command FIFO\n",
+             cmd);
+      break;
+    case SVGA_CMD_SURFACE_ALPHA_BLEND:
+      if (len < (sizeof(SVGAFifoCmdSurfaceAlphaBlend) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdSurfaceAlphaBlend) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdSurfaceAlphaBlend =
+          sizeof(SVGAFifoCmdSurfaceAlphaBlend) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdSurfaceAlphaBlend >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdSurfaceAlphaBlend -= 1;
+      };
+      VPRINT("SVGA_CMD_SURFACE_ALPHA_BLEND command %u in SVGA command FIFO\n",
+             cmd);
+      break;
+    case SVGA_CMD_SURFACE_COPY:
+      if (len < (sizeof(SVGAFifoCmdSurfaceCopy) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdSurfaceCopy) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdSurfaceCopy =
+          sizeof(SVGAFifoCmdSurfaceCopy) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdSurfaceCopy >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdSurfaceCopy -= 1;
+      };
+      VPRINT("SVGA_CMD_SURFACE_COPY command %u in SVGA command FIFO\n", cmd);
+      break;
+    case SVGA_CMD_SURFACE_FILL:
+      if (len < (sizeof(SVGAFifoCmdSurfaceFill) / sizeof(uint32_t)) + 1) {
+        s->fifo_stop = fifo_start;
+        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
+        len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
+        break;
+      };
+      len -= sizeof(SVGAFifoCmdSurfaceFill) / sizeof(uint32_t) + 1;
+      uint32_t SizeOfSVGAFifoCmdSurfaceFill =
+          sizeof(SVGAFifoCmdSurfaceFill) / sizeof(uint32_t);
+      while (SizeOfSVGAFifoCmdSurfaceFill >= 1) {
+        vmsvga_fifo_read(s);
+        SizeOfSVGAFifoCmdSurfaceFill -= 1;
+      };
+      VPRINT("SVGA_CMD_SURFACE_FILL command %u in SVGA command FIFO\n", cmd);
+      break;
     case SVGA_CMD_UPDATE:
       if (len < (sizeof(SVGAFifoCmdUpdate) / sizeof(uint32_t)) + 1) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdUpdate) / sizeof(uint32_t) + 1;
@@ -327,6 +906,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdUpdateVerbose) / sizeof(uint32_t) + 1;
@@ -338,27 +918,12 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
       };
       VPRINT("SVGA_CMD_UPDATE_VERBOSE command %u in SVGA command FIFO\n", cmd);
       break;
-    case SVGA_CMD_RECT_FILL:
-      if (len < (sizeof(SVGAFifoCmdRectFill) / sizeof(uint32_t)) + 1) {
-        s->fifo_stop = fifo_start;
-        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
-        len = 0;
-        break;
-      };
-      len -= sizeof(SVGAFifoCmdRectFill) / sizeof(uint32_t) + 1;
-      uint32_t SizeOfSVGAFifoCmdRectFill =
-          sizeof(SVGAFifoCmdRectFill) / sizeof(uint32_t);
-      while (SizeOfSVGAFifoCmdRectFill >= 1) {
-        vmsvga_fifo_read(s);
-        SizeOfSVGAFifoCmdRectFill -= 1;
-      };
-      VPRINT("SVGA_CMD_RECT_FILL command %u in SVGA command FIFO\n", cmd);
-      break;
     case SVGA_CMD_RECT_COPY:
       if (len < (sizeof(SVGAFifoCmdRectCopy) / sizeof(uint32_t)) + 1) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdRectCopy) / sizeof(uint32_t) + 1;
@@ -479,11 +1044,14 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         SizeOfSVGAFifoCmdFence -= 1;
       };
       s->fifo[SVGA_FIFO_FENCE] = fence_arg;
-      if (((s->irq_mask) & (SVGA_IRQFLAG_FENCE_GOAL)) &&
-          ((fence_arg) == (s->fifo[SVGA_FIFO_FENCE_GOAL]))) {
+      if ((((fence_arg) & (SVGA_IRQFLAG_FENCE_GOAL)) ||
+           ((s->irq_mask) & (SVGA_IRQFLAG_FENCE_GOAL))) &&
+          (((s->irq_mask) == (s->fifo[SVGA_FIFO_FENCE_GOAL]) ||
+            ((fence_arg) == (s->fifo[SVGA_FIFO_FENCE_GOAL]))))) {
         VPRINT("FIFO: irq_status |= SVGA_IRQFLAG_FENCE_GOAL\n");
         irq_status |= SVGA_IRQFLAG_FENCE_GOAL;
-      } else if ((s->irq_mask) & (SVGA_IRQFLAG_ANY_FENCE)) {
+      } else if (((s->irq_mask) & (SVGA_IRQFLAG_ANY_FENCE)) ||
+                 ((fence_arg) & (SVGA_IRQFLAG_ANY_FENCE))) {
         VPRINT("FIFO: irq_status |= SVGA_IRQFLAG_ANY_FENCE\n");
 #ifndef ANY_FENCE_OFF
         irq_status |= SVGA_IRQFLAG_ANY_FENCE;
@@ -497,6 +1065,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdDefineGMR2) / sizeof(uint32_t) + 1;
@@ -513,6 +1082,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdRemapGMR2) / sizeof(uint32_t) + 1;
@@ -529,6 +1099,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdRectRopCopy) / sizeof(uint32_t) + 1;
@@ -545,6 +1116,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdEscape) / sizeof(uint32_t) + 1;
@@ -561,6 +1133,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdDefineScreen) / sizeof(uint32_t) + 1;
@@ -572,27 +1145,12 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
       };
       VPRINT("SVGA_CMD_DEFINE_SCREEN command %u in SVGA command FIFO\n", cmd);
       break;
-    case SVGA_CMD_DISPLAY_CURSOR:
-      if (len < (sizeof(SVGAFifoCmdDisplayCursor) / sizeof(uint32_t)) + 1) {
-        s->fifo_stop = fifo_start;
-        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
-        len = 0;
-        break;
-      };
-      len -= sizeof(SVGAFifoCmdDisplayCursor) / sizeof(uint32_t) + 1;
-      uint32_t SizeOfSVGAFifoCmdDisplayCursor =
-          sizeof(SVGAFifoCmdDisplayCursor) / sizeof(uint32_t);
-      while (SizeOfSVGAFifoCmdDisplayCursor >= 1) {
-        vmsvga_fifo_read(s);
-        SizeOfSVGAFifoCmdDisplayCursor -= 1;
-      };
-      VPRINT("SVGA_CMD_DISPLAY_CURSOR command %u in SVGA command FIFO\n", cmd);
-      break;
     case SVGA_CMD_DESTROY_SCREEN:
       if (len < (sizeof(SVGAFifoCmdDestroyScreen) / sizeof(uint32_t)) + 1) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdDestroyScreen) / sizeof(uint32_t) + 1;
@@ -609,6 +1167,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdDefineGMRFB) / sizeof(uint32_t) + 1;
@@ -625,6 +1184,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdBlitGMRFBToScreen) / sizeof(uint32_t) + 1;
@@ -642,6 +1202,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdBlitScreenToGMRFB) / sizeof(uint32_t) + 1;
@@ -659,6 +1220,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdAnnotationFill) / sizeof(uint32_t) + 1;
@@ -675,6 +1237,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdAnnotationCopy) / sizeof(uint32_t) + 1;
@@ -686,27 +1249,12 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
       };
       VPRINT("SVGA_CMD_ANNOTATION_COPY command %u in SVGA command FIFO\n", cmd);
       break;
-    case SVGA_CMD_MOVE_CURSOR:
-      if (len < (sizeof(SVGAFifoCmdMoveCursor) / sizeof(uint32_t)) + 1) {
-        s->fifo_stop = fifo_start;
-        s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
-        len = 0;
-        break;
-      };
-      len -= sizeof(SVGAFifoCmdMoveCursor) / sizeof(uint32_t) + 1;
-      uint32_t SizeOfSVGAFifoCmdMoveCursor =
-          sizeof(SVGAFifoCmdMoveCursor) / sizeof(uint32_t);
-      while (SizeOfSVGAFifoCmdMoveCursor >= 1) {
-        vmsvga_fifo_read(s);
-        SizeOfSVGAFifoCmdMoveCursor -= 1;
-      };
-      VPRINT("SVGA_CMD_MOVE_CURSOR command %u in SVGA command FIFO\n", cmd);
-      break;
     case SVGA_CMD_FRONT_ROP_FILL:
       if (len < (sizeof(SVGAFifoCmdFrontRopFill) / sizeof(uint32_t)) + 1) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGAFifoCmdFrontRopFill) / sizeof(uint32_t) + 1;
@@ -723,6 +1271,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -735,6 +1284,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -747,6 +1297,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -759,6 +1310,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -771,6 +1323,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -783,6 +1336,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -791,14 +1345,18 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
       VPRINT("SVGA_3D_CMD_LEGACY_BASE command %u in SVGA command FIFO\n", cmd);
       break;
     case SVGA_3D_CMD_SURFACE_DEFINE:
-      if (len < sizeof(SVGA3dCmdDefineSurface) / sizeof(uint32_t) + 1) {
+      if (len < sizeof(SVGA3dCmdSize) +
+                    sizeof(SVGA3dCmdDefineSurface) / sizeof(uint32_t) + 1) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
-      len -= sizeof(SVGA3dCmdDefineSurface) / sizeof(uint32_t) + 1;
+      len -= sizeof(SVGA3dCmdSize) +
+             sizeof(SVGA3dCmdDefineSurface) / sizeof(uint32_t) + 1;
       uint32_t SizeOfSVGA3dCmdDefineSurface =
+          sizeof(SVGA3dCmdSize) +
           sizeof(SVGA3dCmdDefineSurface) / sizeof(uint32_t);
       while (SizeOfSVGA3dCmdDefineSurface >= 1) {
         vmsvga_fifo_read(s);
@@ -812,6 +1370,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDestroySurface) / sizeof(uint32_t) + 1;
@@ -829,6 +1388,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSurfaceCopy) / sizeof(uint32_t) + 1;
@@ -845,6 +1405,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSurfaceStretchBlt) / sizeof(uint32_t) + 1;
@@ -862,6 +1423,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSurfaceDMA) / sizeof(uint32_t) + 1;
@@ -878,6 +1440,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDefineContext) / sizeof(uint32_t) + 1;
@@ -895,6 +1458,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDestroyContext) / sizeof(uint32_t) + 1;
@@ -912,6 +1476,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetTransform) / sizeof(uint32_t) + 1;
@@ -928,6 +1493,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetZRange) / sizeof(uint32_t) + 1;
@@ -944,6 +1510,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetRenderState) / sizeof(uint32_t) + 1;
@@ -961,6 +1528,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetRenderTarget) / sizeof(uint32_t) + 1;
@@ -978,6 +1546,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetTextureState) / sizeof(uint32_t) + 1;
@@ -995,6 +1564,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetMaterial) / sizeof(uint32_t) + 1;
@@ -1011,6 +1581,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetLightData) / sizeof(uint32_t) + 1;
@@ -1027,6 +1598,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetLightEnabled) / sizeof(uint32_t) + 1;
@@ -1044,6 +1616,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetViewport) / sizeof(uint32_t) + 1;
@@ -1060,6 +1633,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetClipPlane) / sizeof(uint32_t) + 1;
@@ -1076,6 +1650,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdClear) / sizeof(uint32_t) + 1;
@@ -1091,6 +1666,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdPresent) / sizeof(uint32_t) + 1;
@@ -1107,6 +1683,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDefineShader) / sizeof(uint32_t) + 1;
@@ -1124,6 +1701,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDestroyShader) / sizeof(uint32_t) + 1;
@@ -1141,6 +1719,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetShader) / sizeof(uint32_t) + 1;
@@ -1157,6 +1736,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetShaderConst) / sizeof(uint32_t) + 1;
@@ -1174,6 +1754,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1187,6 +1768,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetScissorRect) / sizeof(uint32_t) + 1;
@@ -1204,6 +1786,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdBeginQuery) / sizeof(uint32_t) + 1;
@@ -1220,6 +1803,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdEndQuery) / sizeof(uint32_t) + 1;
@@ -1236,6 +1820,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdWaitForQuery) / sizeof(uint32_t) + 1;
@@ -1253,6 +1838,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1266,6 +1852,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdBlitSurfaceToScreen) / sizeof(uint32_t) + 1;
@@ -1280,14 +1867,18 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
              cmd);
       break;
     case SVGA_3D_CMD_SURFACE_DEFINE_V2:
-      if (len < sizeof(SVGA3dCmdDefineSurface_v2) / sizeof(uint32_t) + 1) {
+      if (len < sizeof(SVGA3dCmdSize) +
+                    sizeof(SVGA3dCmdDefineSurface_v2) / sizeof(uint32_t) + 1) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
-      len -= sizeof(SVGA3dCmdDefineSurface_v2) / sizeof(uint32_t) + 1;
+      len -= sizeof(SVGA3dCmdSize) +
+             sizeof(SVGA3dCmdDefineSurface_v2) / sizeof(uint32_t) + 1;
       uint32_t SizeOfSVGA3dCmdDefineSurface_v2 =
+          sizeof(SVGA3dCmdSize) +
           sizeof(SVGA3dCmdDefineSurface_v2) / sizeof(uint32_t);
       while (SizeOfSVGA3dCmdDefineSurface_v2 >= 1) {
         vmsvga_fifo_read(s);
@@ -1301,6 +1892,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdGenerateMipmaps) / sizeof(uint32_t) + 1;
@@ -1318,6 +1910,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1330,6 +1923,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1342,6 +1936,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1354,6 +1949,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1366,6 +1962,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1378,6 +1975,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1390,6 +1988,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1402,6 +2001,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1414,6 +2014,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdActivateSurface) / sizeof(uint32_t) + 1;
@@ -1431,6 +2032,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDeactivateSurface) / sizeof(uint32_t) + 1;
@@ -1448,6 +2050,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdScreenDMA) / sizeof(uint32_t) + 1;
@@ -1464,6 +2067,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1476,6 +2080,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1488,6 +2093,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1500,6 +2106,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1512,6 +2119,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1524,6 +2132,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1536,6 +2145,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1548,6 +2158,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1560,6 +2171,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetOTableBase) / sizeof(uint32_t) + 1;
@@ -1577,6 +2189,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdReadbackOTable) / sizeof(uint32_t) + 1;
@@ -1594,6 +2207,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDefineGBMob) / sizeof(uint32_t) + 1;
@@ -1611,6 +2225,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDestroyGBMob) / sizeof(uint32_t) + 1;
@@ -1628,6 +2243,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -1640,6 +2256,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdUpdateGBMobMapping) / sizeof(uint32_t) + 1;
@@ -1658,6 +2275,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDefineGBSurface) / sizeof(uint32_t) + 1;
@@ -1675,6 +2293,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDestroyGBSurface) / sizeof(uint32_t) + 1;
@@ -1692,6 +2311,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdBindGBSurface) / sizeof(uint32_t) + 1;
@@ -1709,6 +2329,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdCondBindGBSurface) / sizeof(uint32_t) + 1;
@@ -1727,6 +2348,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdUpdateGBImage) / sizeof(uint32_t) + 1;
@@ -1744,6 +2366,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdUpdateGBSurface) / sizeof(uint32_t) + 1;
@@ -1761,6 +2384,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdReadbackGBImage) / sizeof(uint32_t) + 1;
@@ -1778,6 +2402,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdReadbackGBSurface) / sizeof(uint32_t) + 1;
@@ -1796,6 +2421,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdInvalidateGBImage) / sizeof(uint32_t) + 1;
@@ -1814,6 +2440,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdInvalidateGBSurface) / sizeof(uint32_t) + 1;
@@ -1832,6 +2459,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDefineGBContext) / sizeof(uint32_t) + 1;
@@ -1849,6 +2477,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDestroyGBContext) / sizeof(uint32_t) + 1;
@@ -1866,6 +2495,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdBindGBContext) / sizeof(uint32_t) + 1;
@@ -1883,6 +2513,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdReadbackGBContext) / sizeof(uint32_t) + 1;
@@ -1901,6 +2532,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdInvalidateGBContext) / sizeof(uint32_t) + 1;
@@ -1919,6 +2551,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDefineGBShader) / sizeof(uint32_t) + 1;
@@ -1936,6 +2569,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDestroyGBShader) / sizeof(uint32_t) + 1;
@@ -1953,6 +2587,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdBindGBShader) / sizeof(uint32_t) + 1;
@@ -1970,6 +2605,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetOTableBase) / sizeof(uint32_t) + 1;
@@ -1981,6 +2617,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdBeginGBQuery) / sizeof(uint32_t) + 1;
@@ -1998,6 +2635,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdEndGBQuery) / sizeof(uint32_t) + 1;
@@ -2014,6 +2652,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdWaitForGBQuery) / sizeof(uint32_t) + 1;
@@ -2031,6 +2670,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2043,6 +2683,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdEnableGart) / sizeof(uint32_t) + 1;
@@ -2059,6 +2700,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2071,6 +2713,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdMapMobIntoGart) / sizeof(uint32_t) + 1;
@@ -2088,6 +2731,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdUnmapGartRange) / sizeof(uint32_t) + 1;
@@ -2105,6 +2749,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDefineGBScreenTarget) / sizeof(uint32_t) + 1;
@@ -2123,6 +2768,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDestroyGBScreenTarget) / sizeof(uint32_t) + 1;
@@ -2141,6 +2787,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdBindGBScreenTarget) / sizeof(uint32_t) + 1;
@@ -2159,6 +2806,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdUpdateGBScreenTarget) / sizeof(uint32_t) + 1;
@@ -2177,6 +2825,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2191,6 +2840,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2206,6 +2856,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdSetGBShaderConstInline) / sizeof(uint32_t) + 1;
@@ -2224,6 +2875,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdGBScreenDMA) / sizeof(uint32_t) + 1;
@@ -2241,6 +2893,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2255,6 +2908,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdGBMobFence) / sizeof(uint32_t) + 1;
@@ -2271,6 +2925,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDefineGBSurface_v2) / sizeof(uint32_t) + 1;
@@ -2289,6 +2944,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDefineGBMob) / sizeof(uint32_t) + 1;
@@ -2300,6 +2956,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdRedefineGBMob64) / sizeof(uint32_t) + 1;
@@ -2317,6 +2974,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2329,6 +2987,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2342,6 +3001,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2355,6 +3015,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2369,6 +3030,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2381,6 +3043,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2393,6 +3056,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2406,6 +3070,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2419,6 +3084,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2432,6 +3098,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2446,6 +3113,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2460,6 +3128,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2474,6 +3143,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2488,6 +3158,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2501,6 +3172,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2514,6 +3186,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2526,6 +3199,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2539,6 +3213,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2552,6 +3227,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2566,6 +3242,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2578,6 +3255,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2592,6 +3270,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2606,6 +3285,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2620,6 +3300,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2633,6 +3314,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2647,6 +3329,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2660,6 +3343,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2674,6 +3358,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2688,6 +3373,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2701,6 +3387,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2714,6 +3401,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2727,6 +3415,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2741,6 +3430,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2754,6 +3444,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2766,6 +3457,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2779,6 +3471,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2792,6 +3485,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2805,6 +3499,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2818,6 +3513,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2832,6 +3528,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2846,6 +3543,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2860,6 +3558,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2874,6 +3573,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2886,6 +3586,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2899,6 +3600,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2911,6 +3613,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2925,6 +3628,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2939,6 +3643,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2953,6 +3658,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2967,6 +3673,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2981,6 +3688,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -2995,6 +3703,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3009,6 +3718,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3023,6 +3733,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3037,6 +3748,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3051,6 +3763,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3065,6 +3778,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3079,6 +3793,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3093,6 +3808,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3107,6 +3823,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3121,6 +3838,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3135,6 +3853,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3149,6 +3868,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3163,6 +3883,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3177,6 +3898,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3190,6 +3912,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3203,6 +3926,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3216,6 +3940,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3230,6 +3955,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3244,6 +3970,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3258,6 +3985,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3271,6 +3999,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3285,6 +4014,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3298,6 +4028,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3312,6 +4043,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3326,6 +4058,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3339,6 +4072,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3352,6 +4086,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3366,6 +4101,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3380,6 +4116,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3393,6 +4130,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3406,6 +4144,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3418,6 +4157,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3431,6 +4171,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3445,6 +4186,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3459,6 +4201,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3473,6 +4216,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3487,6 +4231,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3501,6 +4246,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3515,6 +4261,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3529,6 +4276,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdScreenCopy) / sizeof(uint32_t) + 1;
@@ -3545,6 +4293,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdGrowOTable) / sizeof(uint32_t) + 1;
@@ -3561,6 +4310,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3574,6 +4324,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdIntraSurfaceCopy) / sizeof(uint32_t) + 1;
@@ -3591,6 +4342,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdDefineGBSurface_v3) / sizeof(uint32_t) + 1;
@@ -3609,6 +4361,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3622,6 +4375,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3636,6 +4390,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3650,6 +4405,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3663,6 +4419,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3676,6 +4433,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3689,6 +4447,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3702,6 +4461,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3716,6 +4476,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3730,6 +4491,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3744,6 +4506,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3757,6 +4520,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3771,6 +4535,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3785,6 +4550,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3797,6 +4563,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3811,6 +4578,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3824,6 +4592,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3837,6 +4606,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3851,6 +4621,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3865,6 +4636,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdLogicOpsBitBlt) / sizeof(uint32_t) + 1;
@@ -3882,6 +4654,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdLogicOpsTransBlt) / sizeof(uint32_t) + 1;
@@ -3899,6 +4672,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdLogicOpsStretchBlt) / sizeof(uint32_t) + 1;
@@ -3917,6 +4691,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdLogicOpsColorFill) / sizeof(uint32_t) + 1;
@@ -3934,6 +4709,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdLogicOpsAlphaBlend) / sizeof(uint32_t) + 1;
@@ -3953,6 +4729,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       len -= sizeof(SVGA3dCmdLogicOpsClearTypeBlend) / sizeof(uint32_t) + 1;
@@ -3971,6 +4748,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3985,6 +4763,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -3998,6 +4777,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -4011,6 +4791,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -4025,6 +4806,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -4039,6 +4821,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -4053,6 +4836,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -4067,6 +4851,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -4081,6 +4866,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -4095,6 +4881,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -4107,6 +4894,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -4119,6 +4907,7 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s) {
         s->fifo_stop = fifo_start;
         s->fifo[SVGA_FIFO_STOP] = cpu_to_le32(s->fifo_stop);
         len = 0;
+        VPRINT("rewind command %u in SVGA command FIFO\n", cmd);
         break;
       };
       s->fifo_stop = fifo_start;
@@ -4608,7 +5397,7 @@ static uint32_t vmsvga_value_read(void *opaque, uint32_t address) {
            s->index, ret);
     break;
   case SVGA_REG_GBOBJECT_MEM_SIZE_KB:
-    ret = 8388608;
+    ret = s->vga.vram_size / 1024;
     VPRINT("SVGA_REG_GBOBJECT_MEM_SIZE_KB register %u with the return of %u\n",
            s->index, ret);
     break;
@@ -4628,7 +5417,7 @@ static uint32_t vmsvga_value_read(void *opaque, uint32_t address) {
            ret);
     break;
   case SVGA_REG_MAX_PRIMARY_BOUNDING_BOX_MEM:
-    ret = 134217728;
+    ret = s->vga.vram_size;
     VPRINT("SVGA_REG_MAX_PRIMARY_BOUNDING_BOX_MEM register %u with the return "
            "of %u\n",
            s->index, ret);
@@ -4636,12 +5425,12 @@ static uint32_t vmsvga_value_read(void *opaque, uint32_t address) {
   case SVGA_REG_CAPABILITIES:
     caps = 0xffffffff;
 #ifndef EXPCAPS
-    caps -= SVGA_CAP_UNKNOWN_A;       // Windows 9x
-    caps -= SVGA_CAP_RECT_COPY;       // Windows 9x & Windows (XPDM)
-    caps -= SVGA_CAP_UNKNOWN_C;       // Windows 9x
-    caps -= SVGA_CAP_SCREEN_OBJECT_2; // Linux
-    caps -= SVGA_CAP_CMD_BUFFERS_2;   // Windows (WDDM)
-    caps -= SVGA_CAP_GBOBJECTS;       // Linux, Windows (XPDM) & Windows (WDDM)
+    caps -= SVGA_CAP_RECT_FILL;        // Windows 9x
+    caps -= SVGA_CAP_RECT_COPY;        // Windows 9x & Windows (XPDM)
+    caps -= SVGA_CAP_LEGACY_OFFSCREEN; // Windows 9x
+    caps -= SVGA_CAP_SCREEN_OBJECT_2;  // Linux
+    caps -= SVGA_CAP_CMD_BUFFERS_2;    // Windows (WDDM)
+    caps -= SVGA_CAP_GBOBJECTS;        // Linux, Windows (XPDM) & Windows (WDDM)
 #endif
     ret = caps;
     VPRINT("SVGA_REG_CAPABILITIES register %u with the return of %u\n",
@@ -4847,7 +5636,7 @@ static uint32_t vmsvga_value_read(void *opaque, uint32_t address) {
            s->index, ret);
     break;
   case SVGA_REG_CURSOR_MAX_BYTE_SIZE:
-    ret = 8388608;
+    ret = s->vga.vram_size;
     VPRINT("SVGA_REG_CURSOR_MAX_BYTE_SIZE register %u with the return of %u\n",
            s->index, ret);
     break;
@@ -5767,29 +6556,35 @@ static void vmsvga_value_write(void *opaque, uint32_t address, uint32_t value) {
         container_of(s, struct pci_vmsvga_state_s, chip);
     PCIDevice *pci_dev = PCI_DEVICE(pci_vmsvga);
 #endif
-    if ((value) & (SVGA_IRQFLAG_FENCE_GOAL)) {
+    if ((((s->irq_mask) & (SVGA_IRQFLAG_FENCE_GOAL) ||
+          ((value) & (SVGA_IRQFLAG_FENCE_GOAL)))) &&
+        (((s->irq_mask) == (s->fifo[SVGA_FIFO_FENCE_GOAL]) ||
+          (value) == (s->fifo[SVGA_FIFO_FENCE_GOAL])))) {
       VPRINT("REG: irq_status |= SVGA_IRQFLAG_FENCE_GOAL\n");
       irq_status |= SVGA_IRQFLAG_FENCE_GOAL;
-    } else if ((value) & (SVGA_IRQFLAG_ANY_FENCE)) {
+    } else if (((value) & (SVGA_IRQFLAG_ANY_FENCE) ||
+                ((s->irq_mask) & (SVGA_IRQFLAG_ANY_FENCE)))) {
       VPRINT("REG: irq_status |= SVGA_IRQFLAG_ANY_FENCE\n");
 #ifndef ANY_FENCE_OFF
       irq_status |= SVGA_IRQFLAG_ANY_FENCE;
 #endif
     };
-    if ((irq_status) || ((value) & (SVGA_IRQFLAG_FIFO_PROGRESS))) {
+    if ((irq_status) || (((value) & (SVGA_IRQFLAG_FIFO_PROGRESS) ||
+                          (s->irq_mask) & (SVGA_IRQFLAG_FIFO_PROGRESS)))) {
       VPRINT("REG: irq_status || value & SVGA_IRQFLAG_FIFO_PROGRESS\n");
-      if ((value) & (SVGA_IRQFLAG_FIFO_PROGRESS)) {
+      if (((value) & (SVGA_IRQFLAG_FIFO_PROGRESS) ||
+           (s->irq_mask) & (SVGA_IRQFLAG_FIFO_PROGRESS))) {
         VPRINT("REG: irq_status |= SVGA_IRQFLAG_FIFO_PROGRESS\n");
         irq_status |= SVGA_IRQFLAG_FIFO_PROGRESS;
       };
-      if ((value) & (irq_status)) {
+      if (((value) & (irq_status) || (s->irq_mask) & (irq_status))) {
         VPRINT("REG: Pci_set_irq=1\n");
         s->irq_status = irq_status;
 #ifndef RAISE_IRQ_OFF
         pci_set_irq(pci_dev, 1);
 #endif
       };
-    } else if ((s->irq_status) & (value)) {
+    } else if (((s->irq_status) & (value) || (s->irq_status) & (s->irq_mask))) {
       VPRINT("REG: Pci_set_irq=1\n");
 #ifndef RAISE_IRQ_OFF
       pci_set_irq(pci_dev, 1);
